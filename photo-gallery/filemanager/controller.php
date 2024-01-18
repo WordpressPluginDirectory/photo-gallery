@@ -289,11 +289,13 @@ class FilemanagerController {
     $file_name = $file_names[0];
     $file_name = htmlspecialchars_decode($file_name, ENT_COMPAT | ENT_QUOTES);
     $file_name = str_replace('../', '', $file_name);
+    $file_name = basename($file_name);
 
     $file_new_name = (isset($_REQUEST['file_new_name']) ? stripslashes(WDWLibrary::get('file_new_name','','sanitize_text_field','REQUEST')) : '');
     $file_new_name = WDWLibrary::media_name_clean($file_new_name);
     $file_new_name = htmlspecialchars_decode($file_new_name, ENT_COMPAT | ENT_QUOTES);
     $file_new_name = $this->esc_dir($file_new_name);
+    $file_new_name = basename($file_new_name);
 
     $file_path = $cur_dir_path . '/' . $file_name;
     $thumb_file_path = $cur_dir_path . '/thumb/' . $file_name;
@@ -362,8 +364,10 @@ class FilemanagerController {
 	  }
     }
     elseif ((strrpos($file_name, '.') !== false)) {
-      $file_extension = substr($file_name, strrpos($file_name, '.') + 1);
-      if (rename($file_path, $cur_dir_path . '/' . $file_new_name . '.' . $file_extension) == false) {
+      $allowed_extensions_list = array('jpg','jpeg', 'png','gif','svg');
+      $file_extension = strtolower(substr($file_name, strrpos($file_name, '.') + 1));
+
+      if (!in_array($file_extension, $allowed_extensions_list) || rename($file_path, $cur_dir_path . '/' . $file_new_name . '.' . $file_extension) == false) {
         $msg = __("Can't rename the file.", 'photo-gallery');
       }
       else {
@@ -437,35 +441,40 @@ class FilemanagerController {
     $msg = '';
 	  $file_path_tbl = $wpdb->prefix . 'bwg_file_paths';
     foreach ($file_names as $file_name) {
-      $file_name = htmlspecialchars_decode($file_name, ENT_COMPAT | ENT_QUOTES);
-      $file_name = str_replace('../', '', $file_name);
-      $file_path = $cur_dir_path . '/' . $file_name;
-      $thumb_file_path = $cur_dir_path . '/thumb/' . $file_name;
-      $original_file_path = $cur_dir_path . '/.original/' . $file_name;
-      if (file_exists($file_path) == false) {
-        $msg = __("Some of the files couldn't be removed.", 'photo-gallery');
-      }
-      else {
-        if ( is_dir($file_path) == true ) {
-			$paths = $this->getRecursivePathLists($path, $file_name);
-			if ( !empty($paths) ) {
-				$wpdb->delete( $file_path_tbl, array('path' => $path, 'name' => $file_name), array('%s','%s'));
-				foreach( $paths as $val ) {
-					$wpdb->delete( $file_path_tbl, array('path' => $val), array('%s') );
-				}
-			}
+        $file_name = htmlspecialchars_decode($file_name, ENT_COMPAT | ENT_QUOTES);
+        $file_name = str_replace('../', '', $file_name);
+        $file_name = basename($file_name);
+
+        $allowed_extensions_list = array('jpg','jpeg', 'png','gif','svg');
+        $file_extension = strtolower(substr($file_name, strrpos($file_name, '.') + 1));
+        $file_path = $cur_dir_path . '/' . $file_name;
+
+        $thumb_file_path = $cur_dir_path . '/thumb/' . $file_name;
+        $original_file_path = $cur_dir_path . '/.original/' . $file_name;
+        if (!in_array($file_extension, $allowed_extensions_list) || file_exists($file_path) == false) {
+            $msg = __("Some of the files couldn't be removed.", 'photo-gallery');
         }
         else {
-          $wpdb->delete( $file_path_tbl, array('path' => $path, 'name' => $file_name), array('%s','%s') );
+            if ( is_dir($file_path) == true ) {
+                $paths = $this->getRecursivePathLists($path, $file_name);
+                if ( !empty($paths) ) {
+                    $wpdb->delete( $file_path_tbl, array('path' => $path, 'name' => $file_name), array('%s','%s'));
+                    foreach( $paths as $val ) {
+                        $wpdb->delete( $file_path_tbl, array('path' => $val), array('%s') );
+                    }
+                }
+            }
+            else {
+              $wpdb->delete( $file_path_tbl, array('path' => $path, 'name' => $file_name), array('%s','%s') );
+            }
+            $this->remove_file_dir($file_path, $input_dir, $file_name);
+            if (file_exists($thumb_file_path)) {
+              $this->remove_file_dir($thumb_file_path);
+            }
+            if (file_exists($original_file_path)) {
+              $this->remove_file_dir($original_file_path);
+            }
         }
-        $this->remove_file_dir($file_path, $input_dir, $file_name);
-        if (file_exists($thumb_file_path)) {
-          $this->remove_file_dir($thumb_file_path);
-        }
-        if (file_exists($original_file_path)) {
-          $this->remove_file_dir($original_file_path);
-        }
-      }
     }
     $_REQUEST['file_names'] = '';
     $args = array(
@@ -517,8 +526,11 @@ class FilemanagerController {
 				unset($file['id']);
 				$file_name = htmlspecialchars_decode($file_name, ENT_COMPAT | ENT_QUOTES);
 				$file_name = str_replace('../', '', $file_name);
+                $file_name = basename($file_name);
+                $allowed_extensions_list = array('jpg','jpeg', 'png','gif','svg');
+                $file_extension = strtolower(substr($file_name, strrpos($file_name, '.') + 1));
 				$src = $src_dir . '/' . $file_name;
-				if (file_exists($src) == false) {
+				if (!in_array($file_extension, $allowed_extensions_list) || file_exists($src) == false) {
 					$msg = "Failed to copy some of the files.";
 					$msg = $file_name;
 					continue;
@@ -591,10 +603,13 @@ class FilemanagerController {
 			foreach ( $file_names as $file_name ) {
 				$file_name = htmlspecialchars_decode($file_name, ENT_COMPAT | ENT_QUOTES);
 				$file_name = str_replace('../', '', $file_name);
-				$src = $src_dir . '/' . $file_name;
+                $allowed_extensions_list = array('jpg','jpeg', 'png','gif','svg');
+                $file_extension = strtolower(substr($file_name, strrpos($file_name, '.') + 1));
+
+                $src = $src_dir . '/' . $file_name;
 				$dest = $dest_dir . '/' . $file_name;
 
-				if ( (file_exists($src) == FALSE) || (file_exists($dest) == TRUE) ) {
+				if ( !in_array($file_extension, $allowed_extensions_list) || (file_exists($src) == FALSE) || (file_exists($dest) == TRUE) ) {
 					$flag = FALSE;
 				} else {
 					$flag = rename($src, $dest);
