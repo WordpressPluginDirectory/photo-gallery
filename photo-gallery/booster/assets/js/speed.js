@@ -346,6 +346,9 @@ function draw_score_circle( desktop_score, mobile_score ) {
       color = color_mobile;
       bg_color = bg_color_mobile;
     }
+    if( typeof jQuery(_this).circleProgress != 'function' ) {
+      return;
+    }
     jQuery(_this).circleProgress({
       value: val,
       size: 78,

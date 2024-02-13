@@ -36,7 +36,7 @@ class BWGModelGalleryBox {
       $order_by = 'desc';
     }
 
-    $bwg_random_seed = WDWLibrary::get('bwg_random_seed','');
+    $bwg_random_seed = WDWLibrary::get('bwg_random_seed','','intval');
     $bwg_filter_tag_temp = WDWLibrary::get('filter_tag', 0);
     if ( empty($bwg_filter_tag_temp) ) {
       $filter_tags = array();

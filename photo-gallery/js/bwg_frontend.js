@@ -2121,7 +2121,7 @@ function bwg_ajax(form_id, current_view, id, album_gallery_id, cur_album_id, typ
   post_data["title_" + current_view] = title;
   post_data["description_" + current_view] = description;
   post_data["sortImagesByValue_" + current_view] = sortByParam;
-  post_data["bwg_random_seed_" + current_view] = jQuery("#bwg_random_seed_" + current_view).val();
+  post_data["bwg_random_seed_" + current_view] = parseInt(jQuery("#bwg_random_seed_" + current_view).val());
 
   if (jQuery("#bwg_search_input_" + current_view).length > 0) { /* Search box exists.*/
     post_data["bwg_search_" + current_view] = jQuery("#bwg_search_input_" + current_view).val();

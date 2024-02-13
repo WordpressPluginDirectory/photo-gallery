@@ -1169,7 +1169,7 @@ function bwg_gallery_box( image_id, bwg_container, openEcommerce, gallery_id ) {
   if (typeof open_comment_attr !== typeof undefined && open_comment_attr !== false) {
     open_comment = '&open_comment=1';
   }
-  var bwg_random_seed = jQuery("#bwg_random_seed_"+bwg).val();
+  var bwg_random_seed = parseInt(jQuery("#bwg_random_seed_"+bwg).val());
   spider_createpopup(bwg_lightbox_url + '&bwg_gallery_type=' + bwg_container.data('gallery-type') + '&bwg_random_seed='+bwg_random_seed+'&image_id=' + image_id + "&filter_tag=" + filterTags + ecommerce + open_comment + '&filter_search_name=' + filtersearchname + filtersortby, bwg, bwg_container.data('popup-width'), bwg_container.data('popup-height'), 1, 'testpopup', 5, bwg_container.data('buttons-position'));
 }
 

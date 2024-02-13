@@ -1305,7 +1305,7 @@ class WDWLibrary {
         $items_in_page = $load_more_image_count;
       }
       $limit = ( ($page_number - 2) * $items_in_page ) + $images_per_page;
-      $bwg_random_seed = self::get('bwg_random_seed_' . $bwg);
+      $bwg_random_seed = self::get('bwg_random_seed_' . $bwg, '', 'intval');
     }
     else {
       $bwg_random_seed = rand();

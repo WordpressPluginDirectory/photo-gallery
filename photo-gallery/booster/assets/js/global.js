@@ -222,6 +222,9 @@ function twb_draw_score_circle(that) {
   var color = score <= 49 ? "rgb(253, 60, 49)" : (score >= 90 ? "rgb(12, 206, 107)" : "rgb(255, 164, 0)");
   jQuery(that).parent().find('.twb-load-time').html(jQuery(that).data('tti'));
   var _this = that;
+  if( typeof jQuery(_this).circleProgress != 'function' ) {
+    return;
+  }
   jQuery(_this).circleProgress({
     value: score / 100,
     size: size,

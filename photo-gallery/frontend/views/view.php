@@ -196,7 +196,7 @@ class BWGViewSite {
           ?>
         <div id="bwg_spider_popup_loading_<?php echo esc_attr($bwg); ?>" class="bwg_spider_popup_loading"></div>
         <div id="spider_popup_overlay_<?php echo esc_attr($bwg); ?>" class="spider_popup_overlay" onclick="spider_destroypopup(1000)"></div>
-        <input type="hidden" id="bwg_random_seed_<?php echo esc_attr($bwg); ?>" value="<?php echo isset($GLOBALS['bwg_random_seed_' . $bwg]) ? esc_attr($GLOBALS['bwg_random_seed_' . $bwg]) : '' ?>">
+        <input type="hidden" id="bwg_random_seed_<?php echo esc_attr($bwg); ?>" value="<?php echo isset($GLOBALS['bwg_random_seed_' . $bwg]) ? intval($GLOBALS['bwg_random_seed_' . $bwg]) : '' ?>">
           <?php
         }
         ?>
