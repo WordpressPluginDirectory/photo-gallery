@@ -470,7 +470,7 @@ class BWGViewSite {
           <i title="<?php echo esc_html__('Reset', 'photo-gallery'); ?>" class="bwg-icon-times bwg_reset" onclick="bwg_clear_search_input('<?php echo esc_attr($current_view); ?>'); <?php echo esc_html($bwg_ajax_reset);?> "></i>
         </span>
           <input id="bwg_images_count_<?php echo esc_attr($current_view); ?>" class="bwg_search_input" type="hidden" name="bwg_images_count_<?php echo esc_attr($current_view); ?>" value="<?php echo esc_attr($images_count); ?>">
-            <span class="search_placeholder_title" onclick="bwg_search_focus(this)" <?php echo esc_html($bwg_search_focus); ?>>
+            <span class="search_placeholder_title" onclick="bwg_search_focus(this)" <?php echo (BWG()->options->front_ajax == "1" && !empty($bwg_search)) ? 'style="display:none;"' : ''; ?>>
                 <span class="bwg_search_loupe_container">
                   <i title="<?php echo esc_html__('SEARCH...', 'photo-gallery'); ?>" class="bwg-icon-search bwg_search"></i>
                 </span>

@@ -74,8 +74,8 @@ class FilemanagerView {
       var messageEnterNewName = "<?php echo __('Enter new name', 'photo-gallery'); ?>";
       var messageFilesUploadComplete = "<?php echo __('Processing uploaded files...', 'photo-gallery'); ?>";
       var root = "<?php echo addslashes($this->controller->get_uploads_dir()); ?>";
-      var dir = "<?php echo(isset($_REQUEST['dir']) ? str_replace(array('\\', '..'), '', WDWLibrary::get('dir', '', 'sanitize_text_field', 'REQUEST')) : ''); ?>";
-      var dirUrl = "<?php echo $this->controller->get_uploads_url() . (isset($_REQUEST['dir']) ? str_replace(array('\\', '..'), '', WDWLibrary::get('dir', '', 'sanitize_text_field', 'REQUEST')) . '/' : ''); ?>";
+      var dir = "<?php echo(isset($_REQUEST['dir']) ? str_replace(array('\\', '..'), '', WDWLibrary::validate_path(WDWLibrary::get('dir', '', 'sanitize_text_field', 'REQUEST'))) : ''); ?>";
+      var dirUrl = "<?php echo $this->controller->get_uploads_url() . (isset($_REQUEST['dir']) ? str_replace(array('\\', '..'), '',  WDWLibrary::validate_path(WDWLibrary::get('dir', '', 'sanitize_text_field', 'REQUEST'))) . '/' : ''); ?>";
       var callback = "<?php echo (isset($_REQUEST['callback']) ? WDWLibrary::get('callback','','esc_js','REQUEST') : ''); ?>";
       var sortBy = "<?php echo $sort_by; ?>";
       var sortOrder = "<?php echo $sort_order; ?>";

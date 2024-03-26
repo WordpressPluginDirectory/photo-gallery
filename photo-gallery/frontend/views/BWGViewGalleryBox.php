@@ -13,6 +13,7 @@ class BWGViewGalleryBox {
 
     $bwg = WDWLibrary::get('current_view', 0, 'intval');
     $current_url = WDWLibrary::get('current_url', '', 'sanitize_url');
+    $current_url = str_replace(array('"', "'"), array('', ""), $current_url);
     $theme_id = WDWLibrary::get('theme_id', 0, 'intval');
     $current_image_id = WDWLibrary::get('image_id', 0, 'intval', 'GET');
     $gallery_id = WDWLibrary::get('gallery_id', 0, 'intval', 'GET');
@@ -778,7 +779,7 @@ class BWGViewGalleryBox {
             $share_url = add_query_arg(array(
                                        'gallery_id' => $gallery_id,
                                        'image_id' => $current_image_id,
-                                       'curr_url' => $current_url,
+                                       'curr_url' => esc_url($current_url),
                                      ), WDWLibrary::get_share_page());
             ?>
             <i title="<?php echo __('Play', 'photo-gallery'); ?>" class="bwg-icon-play bwg_ctrl_btn bwg_play_pause"></i>
@@ -1367,7 +1368,7 @@ class BWGViewGalleryBox {
       'bwg_share_url'                         => add_query_arg(array(
                                                                  'gallery_id' => $gallery_id,
                                                                  'image_id' => '',
-                                                                 'curr_url' => $current_url,
+                                                                 'curr_url' => esc_url($current_url),
                                                                ), WDWLibrary::get_share_page()),
       'bwg_share_image_url'                   => urlencode(BWG()->upload_url),
       'slideshow_interval'                    => $params['popup_interval'],

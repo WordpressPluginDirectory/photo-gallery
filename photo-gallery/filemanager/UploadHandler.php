@@ -47,6 +47,7 @@ class bwg_upl {
     'min_width' => 'Image requires a minimum width',
     'max_height' => 'Image exceeds maximum height',
     'min_height' => 'Image requires a minimum height',
+    'sanitize_error' => 'Sorry, this file couldn\'t be sanitized and wasn\'t uploaded',
   );
 
   function __construct( $options = NULL, $initialize = TRUE, $error_messages = NULL ) {
@@ -379,6 +380,16 @@ class bwg_upl {
     return TRUE;
   }
 
+    public function sanitize_svg($file){
+        require_once(BWG()->plugin_dir . '/filemanager/svg-sanitizer.php');
+
+        $sanitizer = new BwgSvg_Sanitizer();
+        if(!$sanitizer->sanitize_file($file)) {
+            die("Sorry, this file couldn't be sanitized and wasn't uploaded");
+        }
+        return $file;
+    }
+
   protected function upcount_name_callback( $matches ) {
     $index = isset($matches[1]) ? intval($matches[1]) + 1 : 1;
     $ext = isset($matches[2]) ? $matches[2] : '';
@@ -452,7 +463,10 @@ class bwg_upl {
         }
       }
       else {
-        $failed_versions[] = $version;
+        if( strpos($file->type, 'svg') === false ) {
+            $failed_versions[] = $version;
+        }
+
       }
     }
 
@@ -695,6 +709,12 @@ class bwg_upl {
     $file->size = $this->fix_integer_overflow(intval($size));
     $file->type = $type;
     if ( $this->validate($uploaded_file, $file, $error, $index) ) {
+      /* Validation of SVG file */
+      if( strpos($file->type, 'svg') !== false && !$this->sanitize_svg($uploaded_file)) {
+          $file->error = $this->get_error_message("sanitize_error");
+          return $file;
+      }
+
       $this->handle_form_data($file, $index);
       $upload_dir = $this->get_upload_path();
       if ( !is_dir($upload_dir) ) {
@@ -709,11 +729,6 @@ class bwg_upl {
         }
         else {
           move_uploaded_file($uploaded_file, $file_path);
-          if ( strpos($type, 'svg') ) {
-            // Remove scripts from SVG files for security reasons.
-            $file_content = file_get_contents($file_path);
-            file_put_contents($file_path, preg_replace('#<script(.*?)>(.*?)</script>#is', '', $file_content));
-          }
         }
       }
       else {
@@ -897,7 +912,8 @@ class bwg_upl {
 
   public function post( $print_response = TRUE ) {
     global $wpdb;
-    $path = isset($_REQUEST['dir']) ? str_replace(array('\\', '..'), '', WDWLibrary::get('dir', '', 'sanitize_text_field', 'REQUEST')) . '/' : '/';
+    $dir = isset($_REQUEST['dir']) ? WDWLibrary::validate_path(WDWLibrary::get('dir', '', 'sanitize_text_field', 'REQUEST')) : '';
+    $path = ($dir != '') ? str_replace(array('\\', '..'), '', $dir) . '/' : '/';
     if ( isset($_REQUEST['import']) && WDWLibrary::get('import', 0, 'intval','REQUEST') == 1 ) {
       $files = array();
       $file_names = json_decode(isset($_REQUEST['file_namesML']) ? stripslashes(WDWLibrary::get('file_namesML','','sanitize_text_field','REQUEST')) : array());

@@ -554,8 +554,7 @@ class GalleriesModel_bwg {
       $row->modified_date = time();
     }
     $user_data = get_userdata($row->author);
-    $row->author = ($user_data != FALSE ? $user_data->display_name : '');
-
+    $row->author = ($user_data != FALSE && isset($user_data->display_name) ? $user_data->display_name : '');
     return $row;
   }
 

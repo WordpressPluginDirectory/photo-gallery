@@ -3613,5 +3613,20 @@ class WDWLibrary {
 
     return $url;
   }
+
+    /**
+     * Validate path using regex allowed characters.
+     *
+     * @param $path string
+     *
+     * @return string
+    */
+    public static function validate_path( $path = '' ) {
+        $path = trim($path);
+        if( preg_match('/^[^*?"\'()<>|:]*$/', $path) ) {
+            return $path;
+        }
+        return '';
+    }
 }
 

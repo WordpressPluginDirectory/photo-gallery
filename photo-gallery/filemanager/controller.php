@@ -42,7 +42,8 @@ class FilemanagerController {
 
   public function display() {
     $params = array();
-    $dir = str_replace(array('\\', '..'), '', $this->model->get_from_session('dir', ''));
+    $dir = str_replace(array('\\', '..'), '', WDWLibrary::validate_path($this->model->get_from_session('dir', '')));
+
     $search = $this->model->get_from_session('search', '');
     $page_num = $this->model->get_from_session('paged', 0);
     $callback = $this->model->get_from_session('callback', '');
@@ -451,7 +452,7 @@ class FilemanagerController {
 
         $thumb_file_path = $cur_dir_path . '/thumb/' . $file_name;
         $original_file_path = $cur_dir_path . '/.original/' . $file_name;
-        if (!in_array($file_extension, $allowed_extensions_list) || file_exists($file_path) == false) {
+        if ( (!in_array($file_extension, $allowed_extensions_list) && !is_dir($file_path)) || file_exists($file_path) == false ) {
             $msg = __("Some of the files couldn't be removed.", 'photo-gallery');
         }
         else {
@@ -530,7 +531,7 @@ class FilemanagerController {
                 $allowed_extensions_list = array('jpg','jpeg', 'png','gif','svg');
                 $file_extension = strtolower(substr($file_name, strrpos($file_name, '.') + 1));
 				$src = $src_dir . '/' . $file_name;
-				if (!in_array($file_extension, $allowed_extensions_list) || file_exists($src) == false) {
+				if ( (!in_array($file_extension, $allowed_extensions_list)  && !is_dir($src)) || file_exists($src) == false ) {
 					$msg = "Failed to copy some of the files.";
 					$msg = $file_name;
 					continue;
@@ -609,7 +610,7 @@ class FilemanagerController {
                 $src = $src_dir . '/' . $file_name;
 				$dest = $dest_dir . '/' . $file_name;
 
-				if ( !in_array($file_extension, $allowed_extensions_list) || (file_exists($src) == FALSE) || (file_exists($dest) == TRUE) ) {
+				if ( (!in_array($file_extension, $allowed_extensions_list) && !is_dir($src)) || (file_exists($src) == FALSE) || (file_exists($dest) == TRUE) ) {
 					$flag = FALSE;
 				} else {
 					$flag = rename($src, $dest);
