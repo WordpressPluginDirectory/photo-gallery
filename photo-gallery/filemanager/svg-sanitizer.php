@@ -385,7 +385,6 @@ class BwgSvg_Sanitizer {
 			'filter',
 			'foreignobject',
 			'g',
-			'image',
 			'line',
 			'lineargradient',
 			'marker',
