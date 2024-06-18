@@ -376,7 +376,6 @@ class bwg_upl {
         return FALSE;
       }
     }
-
     return TRUE;
   }
 
@@ -479,7 +478,6 @@ class bwg_upl {
       default:
         $file->error = 'Failed to create scaled versions: ' . implode(', ', $failed_versions);
     }
-
     if ( !$file->error ) {
       global $wpdb;
       $file->filename = str_replace("_", " ", substr($file->name, 0, strrpos($file->name, '.')));
@@ -540,8 +538,9 @@ class bwg_upl {
         $zip->extractTo($target_dir);
         $svg_files = glob($target_dir . '/*.svg');
         foreach ( $svg_files as $svg ) {
-          $file_content = file_get_contents($svg);
-          file_put_contents($svg, preg_replace('#<script(.*?)>(.*?)</script>#is', '', $file_content));
+            if( !$this->sanitize_svg($svg) ) {
+                unlink($svg);
+            }
         }
       }
       else {
@@ -599,8 +598,9 @@ class bwg_upl {
             if ( is_int($img_width) || $extension == 'svg' ) {
               $file->error = FALSE;
               if ( $extension == 'svg' ) {
-                $file_content = file_get_contents($ex_file);
-                file_put_contents($ex_file, preg_replace('#<script(.*?)>(.*?)</script>#is', '', $file_content));
+                if( !$this->sanitize_svg($ex_file) ) {
+                    continue;
+                }
               }
               $this->handle_image_file($ex_file, $file);
             }

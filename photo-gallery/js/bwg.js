@@ -158,10 +158,13 @@ jQuery( function () {
   } );
 
   jQuery( '#bwg_image_editor_notice .notice-dismiss' ).on( 'click', function () {
-    var dismiss_url = bwg_ajax_url + '=' + jQuery( '#bwg_image_editor_notice' ).data( 'action' );
     jQuery.ajax( {
       method: "POST",
-      url: dismiss_url,
+      url: ajaxurl,
+      data: {
+        action: jQuery( '#bwg_image_editor_notice' ).data( 'action' ),
+        nonce: bwg.ajaxnonce,
+      }
     } );
   });
 
@@ -1691,8 +1694,10 @@ function spider_media_uploader( e, multiple ) {
     var filesSelectedML = [];
     for ( var image in attachment ) {
       var image_url = attachment[ image ].url;
-      image_url = image_url.replace( bwg_objectL10B.wp_upload_dir.baseurl + '/', '' );
-      filesSelectedML.push( image_url );
+      if( image_url ) {
+        image_url = image_url.replace(bwg_objectL10B.wp_upload_dir.baseurl + '/', '');
+        filesSelectedML.push(image_url);
+      }
     }
     jQuery( '#loading_div' ).show();
     postImageUrls(filesSelectedML, function ( success, result ) {
@@ -2979,7 +2984,9 @@ function bwg_media_name_clean( str ) {
   var matchs = ['%', '&', '+', '^'];
   var replace = ['', '', '', ''];
   for ( var i = 0; i < matchs.length; i++ ) {
-    str = str.replace(matchs[i], replace[i]);
+    if( str ) {
+      str = str.replace(matchs[i], replace[i]);
+    }
   }
   return str;
 }

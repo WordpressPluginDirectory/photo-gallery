@@ -176,8 +176,7 @@ class FilemanagerController {
    * @return mixed
    */
 	private function esc_dir($dir) {
-		$dir = str_replace('../', '', $dir);
-
+        $dir = str_replace(array('../', '.'), '', $dir);
 		return $dir;
 	}
 
@@ -302,7 +301,6 @@ class FilemanagerController {
     $thumb_file_path = $cur_dir_path . '/thumb/' . $file_name;
     $original_file_path = $cur_dir_path . '/.original/' . $file_name;
     $msg = '';
-
     if (file_exists($file_path) == false) {
       $msg = __("File doesn't exist.", 'photo-gallery');
     }
@@ -389,16 +387,16 @@ class FilemanagerController {
 
         );
 
-		$path = $input_dir .'/';
-		$wpdb->update($wpdb->prefix . 'bwg_file_paths',
-			array(
-				'name'	 	=> $file_new_name . '.' . $file_extension,
-				'filename' 	=> $file_new_name,
-				'thumb' 	=> 'thumb/'. $file_new_name . '.' . $file_extension,
-				'alt' 		=> $file_new_name,
-				'date_modified' => date('Y-m-d H:i:s')
-			),
-			array('path' => $path, 'name' => $file_name),
+        $path = $input_dir .'/';
+        $wpdb->update($wpdb->prefix . 'bwg_file_paths',
+            array(
+                'name'	 	=> $file_new_name . '.' . $file_extension,
+                'filename' 	=> $file_new_name,
+                'thumb' 	=> 'thumb/'. $file_new_name . '.' . $file_extension,
+                'alt' 		=> $file_new_name,
+                'date_modified' => date('Y-m-d H:i:s')
+            ),
+            array('path' => $path, 'name' => $file_name),
       array('%s','%s','%s','%s','%s'),
       array('%s','%s')
 
@@ -510,15 +508,16 @@ class FilemanagerController {
 	$src_dir = $src_dir == '' ? $this->uploads_dir : $this->uploads_dir . '/' . $src_dir;
 	$src_dir = htmlspecialchars_decode($src_dir, ENT_COMPAT | ENT_QUOTES);
 	$src_dir = $this->esc_dir($src_dir);
-
 	$dest_dir = (isset($_REQUEST['clipboard_dest']) ? stripslashes(WDWLibrary::get('clipboard_dest','','sanitize_text_field','REQUEST')) : '');
 	$dest_dir = $dest_dir == '' ? $this->uploads_dir : $this->uploads_dir . '/' . $dest_dir;
 	$dest_dir = htmlspecialchars_decode($dest_dir, ENT_COMPAT | ENT_QUOTES);
 	$dest_dir = $this->esc_dir($dest_dir);
 
 	$path_old = (isset($_REQUEST['clipboard_src']) ? stripslashes(WDWLibrary::get('clipboard_src','','sanitize_text_field','REQUEST')) .'/' : '/');
-	$path_new = (isset($_REQUEST['clipboard_dest']) ? stripslashes(WDWLibrary::get('clipboard_dest','','sanitize_text_field','REQUEST')) .'/' : '/');
-	$file_path_tbl = $wpdb->prefix . 'bwg_file_paths';
+    $path_old = $this->esc_dir($path_old);
+    $path_new = (isset($_REQUEST['clipboard_dest']) ? stripslashes(WDWLibrary::get('clipboard_dest','','sanitize_text_field','REQUEST')) .'/' : '/');
+    $path_new = $this->esc_dir($path_new);
+    $file_path_tbl = $wpdb->prefix . 'bwg_file_paths';
 
 	switch ((isset($_REQUEST['clipboard_task']) ? stripslashes(WDWLibrary::get('clipboard_task','','sanitize_text_field','REQUEST')) : '')) {
 		case 'copy': {
@@ -527,7 +526,7 @@ class FilemanagerController {
 				unset($file['id']);
 				$file_name = htmlspecialchars_decode($file_name, ENT_COMPAT | ENT_QUOTES);
 				$file_name = str_replace('../', '', $file_name);
-                $file_name = basename($file_name);
+                $file_name = sanitize_file_name(basename($file_name));
                 $allowed_extensions_list = array('jpg','jpeg', 'png','gif','svg');
                 $file_extension = strtolower(substr($file_name, strrpos($file_name, '.') + 1));
 				$src = $src_dir . '/' . $file_name;

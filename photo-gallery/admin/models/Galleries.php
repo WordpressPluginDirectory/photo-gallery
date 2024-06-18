@@ -726,15 +726,24 @@ class GalleriesModel_bwg {
         }
         $filename = WDWLibrary::get('input_filename_' . $image_id);
         $description = str_replace(array(
-                                     '\\',
+                                    '=',
+                                    '&lt;',
+                                    '&gt;',
+                                    '\\',
                                      '\t'
                                    ), '', WDWLibrary::get('image_description_' . $image_id, '', 'wp_filter_post_kses'));
         $description = WDWLibrary::strip_tags(htmlspecialchars_decode($description));
+
         $alt = str_replace(array(
+                             '=',
+                             '&lt;',
+                             '&gt;',
                              '\\',
                              '\t'
                            ), '', WDWLibrary::get('image_alt_text_' . $image_id, '', 'wp_filter_post_kses'));
+
         $alt = preg_replace("/<a[^>]*>|<\/a>/", '', $alt);
+        $alt = sanitize_text_field($alt);
         $alt = WDWLibrary::strip_tags(htmlspecialchars_decode($alt));
         $date = WDWLibrary::get('input_date_modified_' . $image_id, date('Ymd'));
         $size = WDWLibrary::get('input_size_' . $image_id);
