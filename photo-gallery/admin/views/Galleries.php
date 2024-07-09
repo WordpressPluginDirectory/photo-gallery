@@ -698,12 +698,12 @@ class GalleriesView_bwg extends AdminView_bwg {
                       <img id="image_thumb_<?php echo $row->id; ?>"
                            class="preview-image gallery_image_thumb <?php echo $temp ? '' : 'bwg_no_border' ?>"
                           <?php echo $temp ? 'tempthumb_src=""' : ''; ?>
-                           data-embed="<?php echo $is_embed; ?>"
-                           data-instagram="<?php echo $is_instagram; ?>"
-                           data-type="<?php echo $row->filetype; ?>"
-                           data-src="<?php echo $temp ? '' : $image_url ?>"
-                           title="<?php echo $row->filename; ?>"
-                           alt="<?php echo $row->filename; ?>"/>
+                           data-embed="<?php echo esc_html($is_embed); ?>"
+                           data-instagram="<?php echo esc_html($is_instagram); ?>"
+                           data-type="<?php echo esc_html($row->filetype); ?>"
+                           data-src="<?php echo $temp ? '' : esc_url($image_url) ?>"
+                           title="<?php echo esc_html($row->filename); ?>"
+                           alt="<?php echo esc_html($row->filename); ?>"/>
 
                     </span>
                     <?php
