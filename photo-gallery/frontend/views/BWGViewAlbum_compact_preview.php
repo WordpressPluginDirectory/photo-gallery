@@ -95,7 +95,7 @@ class BWGViewAlbum_compact_preview extends BWGViewSite {
                               ), $REQUEST_URI) );
         $href = $this->http_strip_query_param($href, 'bwg_search_' . $bwg);
         $href = $this->http_strip_query_param($href, 'page_number_' . $bwg);
-        $title = '<div class="bwg-title1"><div class="bwg-title2">' . ($row->name ? htmlspecialchars_decode($row->name, ENT_COMPAT | ENT_QUOTES) : '&nbsp;') . '</div></div>';
+        $title = '<div class="bwg-title1"><div class="bwg-title2">' . ($row->name ? wp_kses_post(htmlspecialchars_decode($row->name, ENT_COMPAT | ENT_QUOTES)) : '&nbsp;') . '</div></div>';
         $resolution_thumb = $row->resolution_thumb;
         $image_thumb_width = '';
         $image_thumb_height = '';

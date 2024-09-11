@@ -47,7 +47,7 @@ class BWGViewThumbnails_masonry extends BWGViewSite {
         $class = '';
         $data_image_id = '';
         $href = '';
-		    $title = '<div class="bwg-title1"><div class="bwg-title2">' . htmlspecialchars_decode($image_row->alt, ENT_COMPAT | ENT_QUOTES) . '</div></div>';
+		    $title = '<div class="bwg-title1"><div class="bwg-title2">' . wp_kses_post(htmlspecialchars_decode($image_row->alt, ENT_COMPAT | ENT_QUOTES)) . '</div></div>';
         $play_icon = '<div class="bwg-play-icon1"><i title="' . __('Play', 'photo-gallery') . '" class="bwg-icon-play bwg-title2 bwg-play-icon2"></i></div>';
         $ecommerce_icon = '<div class="bwg-ecommerce1"><div class="bwg-ecommerce2">';
         if ( $image_row->pricelist_id ) {

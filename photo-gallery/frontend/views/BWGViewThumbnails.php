@@ -37,8 +37,8 @@ class BWGViewThumbnails extends BWGViewSite {
         $class = '';
         $data_image_id = '';
         $href = '';
-        $title = '<div class="bwg-title1"><div class="bwg-title2">' . ($image_row->alt ? htmlspecialchars_decode($image_row->alt, ENT_COMPAT | ENT_QUOTES) : '&nbsp;') . '</div></div>';
-        $description = '<div class="bwg-thumb-description bwg_thumb_description_0"><span>' . ($image_row->description ? htmlspecialchars_decode($image_row->description, ENT_COMPAT | ENT_QUOTES) : '') . '</span></div>';
+        $title = '<div class="bwg-title1"><div class="bwg-title2">' . ($image_row->alt ? wp_kses_post(htmlspecialchars_decode($image_row->alt, ENT_COMPAT | ENT_QUOTES)) : '&nbsp;') . '</div></div>';
+        $description = '<div class="bwg-thumb-description bwg_thumb_description_0"><span>' . ($image_row->description ? wp_kses_post(htmlspecialchars_decode($image_row->description, ENT_COMPAT | ENT_QUOTES)) : '') . '</span></div>';
         $play_icon = '<div class="bwg-play-icon1"><i title="' . __('Play', 'photo-gallery') . '" class="bwg-icon-play bwg-title2 bwg-play-icon2"></i></div>';
         $ecommerce_icon = '<div class="bwg-ecommerce1"><div class="bwg-ecommerce2">';
         if ( $image_row->pricelist_id ) {
