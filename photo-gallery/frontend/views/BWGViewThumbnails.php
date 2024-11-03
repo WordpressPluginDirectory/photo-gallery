@@ -117,7 +117,7 @@ class BWGViewThumbnails extends BWGViewSite {
     $rgb_thumbs_bg_color = WDWLibrary::spider_hex2rgb($theme_row->thumbs_bg_color);
     ?>
     #bwg_container1_<?php echo esc_attr($bwg); ?> #bwg_container2_<?php echo esc_attr($bwg); ?> .bwg-container-<?php echo esc_attr($bwg); ?>.bwg-standard-thumbnails {
-      width: <?php echo esc_html(($params['image_column_number'] * $params['thumb_width']) + ($theme_row->container_margin ? $theme_row->thumb_margin : 0)); ?>px;
+      width: <?php echo esc_html((floatval($params['image_column_number']) * floatval($params['thumb_width'])) + ($theme_row->container_margin ? floatval($theme_row->thumb_margin) : 0)); ?>px;
       <?php
       if ( $theme_row->thumb_align == 'center' ) {
         ?>
@@ -150,7 +150,7 @@ class BWGViewThumbnails extends BWGViewSite {
       else {
         ?>
       margin-right: -<?php echo esc_html($theme_row->thumb_margin); ?>px;
-      max-width: calc(100% + <?php echo esc_html($theme_row->thumb_margin); ?>px);
+      max-width: calc(100% + <?php echo floatval($theme_row->thumb_margin); ?>px);
         <?php
       }
       ?>
@@ -180,7 +180,7 @@ class BWGViewThumbnails extends BWGViewSite {
       <?php $thumb_bg_color = WDWLibrary::spider_hex2rgb( $theme_row->thumb_bg_color ); ?>
       background-color:rgba(<?php echo esc_html($thumb_bg_color['red'] .','. $thumb_bg_color['green'] . ',' . $thumb_bg_color['blue'] . ', '.number_format($theme_row->thumb_bg_transparency / 100, 2, ".", "")); ?>);
       border: <?php echo esc_html($theme_row->thumb_border_width); ?>px <?php echo esc_html($theme_row->thumb_border_style); ?> #<?php echo esc_html($theme_row->thumb_border_color); ?>;
-      opacity: <?php echo number_format($theme_row->thumb_transparent / 100, 2, ".", ""); ?>;
+      opacity: <?php echo number_format(floatval($theme_row->thumb_transparent) / 100, 2, ".", ""); ?>;
       border-radius: <?php echo esc_html($theme_row->thumb_border_radius); ?>;
       box-shadow: <?php echo esc_html($theme_row->thumb_box_shadow); ?>;
     }
@@ -229,7 +229,7 @@ class BWGViewThumbnails extends BWGViewSite {
     }
     ?>
     #bwg_container1_<?php echo esc_attr($bwg); ?> #bwg_container2_<?php echo esc_attr($bwg); ?> .bwg-container-<?php echo esc_attr($bwg); ?>.bwg-standard-thumbnails .bwg-item1 {
-      padding-top: <?php echo esc_html($params['thumb_height'] / $params['thumb_width'] * 100); ?>%;
+      padding-top: <?php echo esc_html(floatval($params['thumb_height']) / floatval($params['thumb_width']) * 100); ?>%;
     }
     <?php
 	  /* Show image title on hover.*/
@@ -267,10 +267,10 @@ class BWGViewThumbnails extends BWGViewSite {
     word-wrap: break-word;
     }
     #bwg_container1_<?php echo esc_attr($bwg); ?> #bwg_container2_<?php echo esc_attr($bwg); ?> .bwg-container-<?php echo esc_attr($bwg); ?>.bwg-standard-thumbnails .bwg-play-icon2 {
-      font-size: <?php echo esc_html(2 * $theme_row->thumb_title_font_size); ?>px;
+      font-size: <?php echo esc_html(2 * floatval($theme_row->thumb_title_font_size)); ?>px;
     }
     #bwg_container1_<?php echo esc_attr($bwg); ?> #bwg_container2_<?php echo esc_attr($bwg); ?> .bwg-container-<?php echo esc_attr($bwg); ?>.bwg-standard-thumbnails .bwg-ecommerce2 {
-      font-size: <?php echo esc_html(1.2 * $theme_row->thumb_title_font_size); ?>px;
+      font-size: <?php echo esc_html(1.2 * floatval($theme_row->thumb_title_font_size)); ?>px;
       color: #<?php echo esc_html(( $params['ecommerce_icon'] == 'hover') ? (isset($theme_row->thumb_title_font_color_hover) ? $theme_row->thumb_title_font_color_hover : $theme_row->thumb_title_font_color) : $theme_row->thumb_title_font_color); ?>;
     }
     <?php

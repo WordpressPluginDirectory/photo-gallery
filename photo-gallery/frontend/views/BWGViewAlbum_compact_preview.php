@@ -235,7 +235,7 @@ class BWGViewAlbum_compact_preview extends BWGViewSite {
       <?php $thumb_bg_color = WDWLibrary::spider_hex2rgb( $theme_row->album_compact_thumb_bg_color ); ?>
       background-color:rgba(<?php echo esc_html($thumb_bg_color['red']) .','. esc_html($thumb_bg_color['green']) . ',' . esc_html($thumb_bg_color['blue']) . ', '.number_format($theme_row->album_compact_thumb_bg_transparency / 100, 2, ".", ""); ?>);
       border: <?php echo esc_html($theme_row->album_compact_thumb_border_width); ?>px <?php echo esc_html($theme_row->album_compact_thumb_border_style); ?> #<?php echo esc_html($theme_row->album_compact_thumb_border_color); ?>;
-      opacity: <?php echo number_format($theme_row->album_compact_thumb_transparent / 100, 2, ".", ""); ?>;
+      opacity: <?php echo number_format(floatval($theme_row->album_compact_thumb_transparent) / 100, 2, ".", ""); ?>;
       border-radius: <?php echo esc_html($theme_row->album_compact_thumb_border_radius); ?>;
       box-shadow: <?php echo esc_html($theme_row->album_compact_thumb_box_shadow); ?>;
     }
