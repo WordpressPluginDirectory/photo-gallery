@@ -3,7 +3,7 @@
  * Plugin Name: Photo Gallery
  * Plugin URI: https://10web.io/plugins/wordpress-photo-gallery/?utm_source=photo_gallery&utm_medium=free_plugin
  * Description: This plugin is a fully responsive gallery plugin with advanced functionality.  It allows having different image galleries for your posts and pages. You can create unlimited number of galleries, combine them into albums, and provide descriptions and tags.
- * Version: 1.8.31
+ * Version: 1.8.33
  * Author: Photo Gallery Team
  * Author URI: https://10web.io/plugins/?utm_source=photo_gallery&utm_medium=free_plugin
  * Text Domain: photo-gallery
@@ -108,8 +108,8 @@ final class BWG {
     $this->plugin_url = plugins_url(plugin_basename(dirname(__FILE__)));
     $this->front_url = $this->plugin_url;
     $this->main_file = plugin_basename(__FILE__);
-    $this->plugin_version = '1.8.31';
-    $this->db_version = '1.8.31';
+    $this->plugin_version = '1.8.33';
+    $this->db_version = '1.8.33';
     $this->prefix = 'bwg';
     $this->nicename = __('Photo Gallery', 'photo-gallery');
     require_once($this->plugin_dir . '/framework/WDWLibrary.php');
@@ -215,9 +215,6 @@ final class BWG {
       add_action('admin_notices', array($this, 'check_addons_compatibility'));
     }
   	add_action('plugins_loaded', array($this, 'plugins_loaded'));
-
-    // Load a plugin translated strings.
-    load_plugin_textdomain( 'photo-gallery', false, plugin_basename(dirname(__FILE__)) . '/languages' );
 
     if ( !$this->is_pro ) {
       add_filter("plugin_row_meta", array($this, 'add_plugin_meta_links'), 10, 2);
@@ -396,7 +393,7 @@ final class BWG {
   public function init() {
     ob_start();
     $this->overview();
-	  add_action('init', array($this, 'language_load'));
+	add_action('init', array($this, 'language_load'));
     add_action('init', array($this, 'create_post_types'));
   }
 
@@ -1450,7 +1447,7 @@ final class BWG {
    * Languages localization.
    */
   public function language_load() {
-    load_plugin_textdomain($this->prefix, FALSE, basename(dirname(__FILE__)) . '/languages');
+      load_plugin_textdomain( 'photo-gallery', false, plugin_basename(dirname(__FILE__)) . '/languages' );
   }
 
   public function init_free_users_lib() {

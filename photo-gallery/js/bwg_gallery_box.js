@@ -715,6 +715,10 @@ function spider_createpopup(url, current_view, width, height, duration, descript
         '</div>')
         .hide()
         .appendTo("body");
+      /* Load script which is append to body in the ajax response data */
+      popup.find('script').each(function () {
+        jQuery.globalEval(this.text || this.textContent || this.innerHTML || '');
+      });
       gallery_box_ready();
       spider_showpopup(description, lifetime, popup, duration, lightbox_ctrl_btn_pos);
 
