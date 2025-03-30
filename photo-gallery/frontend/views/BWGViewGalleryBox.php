@@ -1078,6 +1078,8 @@ class BWGViewGalleryBox {
 								<p><span class="bwg_comment_error bwg_comment_privacy_policy_error"></span></p>
 								<?php } ?>
 								<p>
+					      <?php wp_nonce_field( 'comment', 'bwg_nonce' ); ?>
+                <p><span class="bwg_comment_error bwg_comment_nonce_error"></span></p>
 								<input <?php echo ($privacy_policy_url) ? 'disabled="disabled"' : ''; ?> onclick="bwg_add_comment(); return false;" ontouchend="bwg_add_comment(); return false;" class="bwg_submit <?php echo ($privacy_policy_url) ? 'bwg-submit-disabled' : ''; ?>" type="submit"
 									 name="bwg_submit" id="bwg_submit" value="<?php echo __('Submit', 'photo-gallery'); ?>" />
 								</p>
@@ -1425,7 +1427,7 @@ class BWGViewGalleryBox {
 		  <span class="bwg_comment_date"><?php echo esc_html($row->date); ?></span>
 		</p>
 		<div class="bwg_comment_body_p">
-		  <span class="bwg_comment_body"><?php echo html_entity_decode(wpautop($row->comment)); ?></span>
+		  <span class="bwg_comment_body"><?php echo wp_kses_post(html_entity_decode(wpautop($row->comment))); ?></span>
 		</div>
   </div>
     <?php

@@ -1056,6 +1056,7 @@ function bwg_add_comment() {
   var url = form.attr('action');
   var post_data = {};
   post_data['ajax_task'] = 'add_comment';
+  post_data['bwg_nonce'] = form.find('#bwg_nonce').val();
   post_data['comment_name'] = form.find('#bwg_name').val();
   post_data['comment_email'] = form.find('#bwg_email').val();
   post_data['comment_text'] = form.find('#bwg_comment').val();
