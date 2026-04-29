@@ -73,7 +73,7 @@ class TenWebNewLibDeactivate {
 
   public function submit_and_deactivate() {
     $wd_options = $this->config;
-    if ( isset($_POST[$wd_options->prefix . "_submit_and_deactivate"]) ) {
+    if ( isset($_POST[$wd_options->prefix . "_submit_and_deactivate"]) && wp_verify_nonce($_POST[$wd_options->prefix . '_save_form_fild'], $wd_options->prefix . '_save_form') ) {
 
       if ( $_POST[$wd_options->prefix . "_submit_and_deactivate"] == 2 || $_POST[$wd_options->prefix . "_submit_and_deactivate"] == 3 ) {
         $data = array();

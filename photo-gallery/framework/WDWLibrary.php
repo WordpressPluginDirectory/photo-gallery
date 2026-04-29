@@ -1265,6 +1265,13 @@ class WDWLibrary {
       }
     }
 
+    if ( strtolower($sort_direction) !== 'asc' ) {
+      $sort_direction = 'desc';
+    }
+    else {
+      $sort_direction = 'asc';
+    }
+
     $where = '';
     if ( $bwg_search !== '' ) {
       $bwg_search_keys = explode(' ', $bwg_search);

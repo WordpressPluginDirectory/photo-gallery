@@ -254,7 +254,9 @@ class BwgSvg_Sanitizer {
 	 * @return false|int
 	 */
 	private function has_js_value( $value ) {
-		return preg_match( '/base64|data|(?:java)?script|alert\(|window\.|document/i', $value );
+		// Normalize: collapse/remove whitespace so "javascr\u0009ipt" cannot bypass.
+		$normalized = preg_replace( '/\s+/u', '', $value );
+		return preg_match( '/base64|data|(?:java)?script|alert\(|window\.|document/i', $normalized );
 	}
 
 	/**
@@ -454,12 +456,14 @@ class BwgSvg_Sanitizer {
 	private function strip_xlinks( $element ) {
 		$xlinks = $element->getAttributeNS( 'http://www.w3.org/1999/xlink', 'href' );
 
-		if ( ! $xlinks ) {
-			return;
+		if ( $xlinks && ! $this->is_safe_href( $xlinks ) ) {
+			$element->removeAttributeNS( 'http://www.w3.org/1999/xlink', 'href' );
 		}
 
-		if ( ! $this->is_safe_href( $xlinks ) ) {
-			$element->removeAttributeNS( 'http://www.w3.org/1999/xlink', 'href' );
+		// Also validate plain href (e.g. on <a>) — same rules as xlink:href.
+		$href = $element->getAttribute( 'href' );
+		if ( $href !== '' && ! $this->is_safe_href( $href ) ) {
+			$element->removeAttribute( 'href' );
 		}
 	}
 
@@ -470,6 +474,12 @@ class BwgSvg_Sanitizer {
 		// Allow empty values.
 		if ( empty( $value ) ) {
 			return true;
+		}
+
+		// Reject script schemes (e.g. javascript:, vbscript:). Normalize whitespace to catch "javascr ipt:".
+		$value_normalized = preg_replace( '/\s+/u', '', $value );
+		if ( preg_match( '/^(javascript|vbscript):/i', $value_normalized ) ) {
+			return false;
 		}
 
 		// Allow fragment identifiers.

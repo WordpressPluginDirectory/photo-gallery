@@ -1118,6 +1118,7 @@ function bwg_remove_comment( id_comment ) {
   var url = form.attr('action');
   var post_data = {};
   post_data['ajax_task'] = 'delete_comment';
+  post_data['bwg_nonce'] = form.find('#bwg_nonce').val();
   post_data['id_image'] = jQuery('#bwg_popup_image').attr('image_id');
   post_data['id_comment'] = id_comment;
   jQuery.ajax({

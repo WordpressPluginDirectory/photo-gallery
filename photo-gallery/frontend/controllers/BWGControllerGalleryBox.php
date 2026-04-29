@@ -174,9 +174,12 @@ class BWGControllerGalleryBox {
 		global $wpdb;
 		$error = false;
 		$json = array();
+		if (!wp_verify_nonce($_POST['bwg_nonce'], 'comment')) {
+			$error = true;
+		}
 		$id_image = WDWLibrary::get('id_image', 0, 'intval');
 		$id_comment = WDWLibrary::get('id_comment', 0, 'intval');
-		if ( $id_image && $id_comment ) {
+		if ( !$error && $id_image && $id_comment && current_user_can('moderate_comments') ) {
 			$delete = $wpdb->query($wpdb->prepare('DELETE FROM `' . $wpdb->prefix . 'bwg_image_comment` WHERE `id` = "%d"', $id_comment));
 			$update = $wpdb->query($wpdb->prepare('UPDATE `' . $wpdb->prefix . 'bwg_image` SET `comment_count` = (CASE WHEN comment_count <= 0 THEN 0 ELSE `comment_count`-1 END) WHERE `id`="%d"', $id_image));
 			if ( !$delete || !$update ) {
