@@ -528,14 +528,14 @@ class ShortcodeView_bwg extends AdminView_bwg {
             <div class="wd-box-content wd-width-50">
               <div class="wd-group">
                 <label class="wd-label" for="bwg_shortcode"><?php _e('Shortcode', 'photo-gallery'); ?></label>
-                <input type="text" id="bwg_shortcode" name="bwg_shortcode" value='<?php echo $tagtext; ?>' onclick="spider_select_value(this)" readonly="readonly" />
+                <input type="text" id="bwg_shortcode" name="bwg_shortcode" value='<?php echo esc_attr($tagtext); ?>' onclick="spider_select_value(this)" readonly="readonly" />
                 <p class="description"><?php _e('Add the selected gallery or gallery group to any WordPress page or post. Simply copy the generated shortcode and paste it in the content of page/post editor.', 'photo-gallery') ?></p>
               </div>
             </div>
             <div class="wd-box-content wd-width-50">
               <div class="wd-group">
                 <label class="wd-label" for="bwg_function"><?php _e('PHP function', 'photo-gallery'); ?></label>
-                <input type="text" id="bwg_function" name="bwg_function" value="<?php echo $tagfunction; ?>" onclick="spider_select_value(this)" readonly="readonly" />
+                <input type="text" id="bwg_function" name="bwg_function" value="<?php echo esc_attr($tagfunction); ?>" onclick="spider_select_value(this)" readonly="readonly" />
                 <p class="description"><?php _e('Use generated PHP function to call the selected gallery or gallery group on a custom PHP template.', 'photo-gallery') ?></p>
               </div>
             </div>

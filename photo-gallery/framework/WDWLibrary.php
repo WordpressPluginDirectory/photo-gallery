@@ -1244,12 +1244,13 @@ class WDWLibrary {
    * @return array
    */
   public static function get_image_rows_data( $gallery_id, $bwg, $type, $tag_input_name, $tag, $images_per_page, $load_more_image_count, $sort_by, $sort_direction = 'ASC' ) {
-    if ( $images_per_page < 0 ) {
-      $images_per_page = 0;
+    $images_per_page = abs( intval( $images_per_page ) );
+    $load_more_image_count = abs( intval( $load_more_image_count ) );
+    $sort_direction = trim( (string) $sort_direction );
+    if ( strtolower( $sort_direction ) !== 'asc' ) {
+      $sort_direction = 'desc';
     }
-    if ( $load_more_image_count < 0 ) {
-      $load_more_image_count = 0;
-    }
+    $sort_direction_sql = ( $sort_direction === 'desc' ) ? 'DESC' : 'ASC';
     $gallery_id = (int) $gallery_id;
     $tag = (int) $tag;
     global $wpdb;
@@ -1263,13 +1264,6 @@ class WDWLibrary {
         $filter_teg_arr = array_map('intval', explode(",", trim($filter_teg)));
         $_REQUEST[$tag_input_name] = $filter_teg_arr;
       }
-    }
-
-    if ( strtolower($sort_direction) !== 'asc' ) {
-      $sort_direction = 'desc';
-    }
-    else {
-      $sort_direction = 'asc';
     }
 
     $where = '';
@@ -1290,17 +1284,27 @@ class WDWLibrary {
       $where = 'AND (' . $alt_search . ' OR ' . $description_search . ')';
     }
 
-    if ( $sort_by == 'size' || $sort_by == 'resolution' ) {
-      $sort_by = ' CAST(image.' . $sort_by . ' AS SIGNED) ';
+    $sort_by_trim = trim( (string) $sort_by );
+    if ( $sort_by_trim === 'size' ) {
+      $order_by_sort = ' CAST(image.size AS SIGNED) ';
     }
-    elseif ( $sort_by == 'random' || $sort_by == 'RAND()' ) {
-      $sort_by = 'RAND()';
+    elseif ( $sort_by_trim === 'resolution' ) {
+      $order_by_sort = ' CAST(image.resolution AS SIGNED) ';
     }
-    elseif ( ($sort_by != 'alt') && ($sort_by != 'date') && ($sort_by != 'filetype') && ($sort_by != 'RAND()') && ($sort_by != 'filename') ) {
-      $sort_by = 'image.`order`';
+    elseif ( $sort_by_trim === 'random' || $sort_by_trim === 'RAND()' ) {
+      $order_by_sort = 'RAND()';
+    }
+    elseif ( in_array( $sort_by_trim, array( 'alt', 'date', 'filetype', 'filename' ), true ) ) {
+      $order_by_map = array(
+        'alt' => 'image.alt',
+        'date' => 'image.date',
+        'filetype' => 'image.filetype',
+        'filename' => 'image.filename',
+      );
+      $order_by_sort = $order_by_map[ $sort_by_trim ];
     }
     else {
-      $sort_by = 'image.' . $sort_by;
+      $order_by_sort = 'image.`order`';
     }
 
     $items_in_page = $images_per_page;
@@ -1355,11 +1359,11 @@ class WDWLibrary {
     $where .= ' AND gallery.published = 1 ';
 
     if ( !empty($prepareArgs) ) {
-      $sql = $wpdb->prepare('SELECT image.* FROM ' . $wpdb->prefix . 'bwg_image as image ' . $join . ' WHERE image.published=1 ' . $where . ' ORDER BY ' . str_replace('RAND()', 'RAND(' . $bwg_random_seed . ')', $sort_by) . ' ' . $sort_direction . ', image.id asc ' . $limit_str, $prepareArgs);
+      $sql = $wpdb->prepare('SELECT image.* FROM ' . $wpdb->prefix . 'bwg_image as image ' . $join . ' WHERE image.published=1 ' . $where . ' ORDER BY ' . str_replace('RAND()', 'RAND(' . $bwg_random_seed . ')', $order_by_sort) . ' ' . $sort_direction_sql . ', image.id asc ' . $limit_str, $prepareArgs);
       $rows = $wpdb->get_results($sql);
     }
     else {
-      $sql = 'SELECT image.* FROM ' . $wpdb->prefix . 'bwg_image as image ' . $join . ' WHERE image.published=1 ' . $where . ' ORDER BY ' . str_replace('RAND()', 'RAND(' . $bwg_random_seed . ')', $sort_by) . ' ' . $sort_direction . ', image.id asc ' . $limit_str;
+      $sql = 'SELECT image.* FROM ' . $wpdb->prefix . 'bwg_image as image ' . $join . ' WHERE image.published=1 ' . $where . ' ORDER BY ' . str_replace('RAND()', 'RAND(' . $bwg_random_seed . ')', $order_by_sort) . ' ' . $sort_direction_sql . ', image.id asc ' . $limit_str;
       $rows = $wpdb->get_results($sql);
     }
     if ( $images_per_page ) {
@@ -2224,8 +2228,8 @@ class WDWLibrary {
       case 'blog_style': {
         $defaults['blog_style_width'] = self::get_option_value('blog_style_width', 'blog_style_width', 'blog_style_width', $use_option_defaults, $params);
         $defaults['blog_style_title_enable'] = self::get_option_value('blog_style_title_enable', 'blog_style_title_enable', 'blog_style_title_enable', $use_option_defaults, $params);
-        $defaults['blog_style_images_per_page'] = self::get_option_value('blog_style_images_per_page', 'blog_style_images_per_page', 'blog_style_images_per_page', $use_option_defaults, $params);
-        $defaults['blog_style_load_more_image_count'] = self::get_option_value('blog_style_load_more_image_count', 'blog_style_load_more_image_count', 'blog_style_load_more_image_count', $use_option_defaults, $params);
+        $defaults['blog_style_images_per_page'] = abs(intval(self::get_option_value('blog_style_images_per_page', 'blog_style_images_per_page', 'blog_style_images_per_page', $use_option_defaults, $params)));
+        $defaults['blog_style_load_more_image_count'] = abs(intval(self::get_option_value('blog_style_load_more_image_count', 'blog_style_load_more_image_count', 'blog_style_load_more_image_count', $use_option_defaults, $params)));
         $defaults['blog_style_enable_page'] = self::get_option_value('blog_style_enable_page', 'blog_style_enable_page', 'blog_style_enable_page', $use_option_defaults, $params);
         $defaults['blog_style_description_enable'] = self::get_option_value('blog_style_description_enable', 'blog_style_description_enable', 'blog_style_description_enable', $use_option_defaults, $params);
         $defaults['sort_by'] = self::get_option_value('blog_style_sort_by', 'sort_by', 'blog_style_sort_by', $use_option_defaults, $params);
@@ -2267,8 +2271,8 @@ class WDWLibrary {
         $defaults['compuct_album_image_thumb_width'] = self::get_option_value('compuct_album_image_thumb_width', 'compuct_album_image_thumb_width', 'album_image_thumb_width', $use_option_defaults, $params);
         $defaults['compuct_album_image_thumb_height'] = self::get_option_value('compuct_album_image_thumb_height', 'compuct_album_image_thumb_height', 'album_image_thumb_height', $use_option_defaults, $params);
         $defaults['compuct_album_enable_page'] = self::get_option_value('compuct_album_enable_page', 'compuct_album_enable_page', 'album_enable_page', $use_option_defaults, $params);
-        $defaults['compuct_albums_per_page'] = self::get_option_value('compuct_albums_per_page', 'compuct_albums_per_page', 'albums_per_page', $use_option_defaults, $params);
-        $defaults['compuct_album_images_per_page'] = self::get_option_value('compuct_album_images_per_page', 'compuct_album_images_per_page', 'album_images_per_page', $use_option_defaults, $params);
+        $defaults['compuct_albums_per_page'] = abs(intval(self::get_option_value('compuct_albums_per_page', 'compuct_albums_per_page', 'albums_per_page', $use_option_defaults, $params)));
+        $defaults['compuct_album_images_per_page'] = abs(intval(self::get_option_value('compuct_album_images_per_page', 'compuct_album_images_per_page', 'album_images_per_page', $use_option_defaults, $params)));
         $defaults['album_sort_by'] = self::get_option_value('compact_album_sort_by', 'all_album_sort_by', 'compact_album_sort_by', $use_option_defaults, $params);
         $defaults['album_order_by'] = self::get_option_value('compact_album_order_by', 'all_album_order_by', 'compact_album_order_by', $use_option_defaults, $params);
         $defaults['sort_by'] = self::get_option_value('album_sort_by', 'sort_by', 'album_sort_by', $use_option_defaults, $params);
@@ -2297,8 +2301,8 @@ class WDWLibrary {
         $defaults['masonry_album_image_column_number'] = self::get_option_value('masonry_album_image_column_number', 'masonry_album_image_column_number', 'album_masonry_image_column_number', $use_option_defaults, $params);
         $defaults['masonry_album_image_thumb_width'] = self::get_option_value('masonry_album_image_thumb_width', 'masonry_album_image_thumb_width', 'album_masonry_image_thumb_width', $use_option_defaults, $params);
         $defaults['masonry_album_enable_page'] = self::get_option_value('masonry_album_enable_page', 'masonry_album_enable_page', 'album_masonry_enable_page', $use_option_defaults, $params);
-        $defaults['masonry_albums_per_page'] = self::get_option_value('masonry_albums_per_page', 'masonry_albums_per_page', 'albums_masonry_per_page', $use_option_defaults, $params);
-        $defaults['masonry_album_images_per_page'] = self::get_option_value('masonry_album_images_per_page', 'masonry_album_images_per_page', 'album_masonry_images_per_page', $use_option_defaults, $params);
+        $defaults['masonry_albums_per_page'] = abs(intval(self::get_option_value('masonry_albums_per_page', 'masonry_albums_per_page', 'albums_masonry_per_page', $use_option_defaults, $params)));
+        $defaults['masonry_album_images_per_page'] = abs(intval(self::get_option_value('masonry_album_images_per_page', 'masonry_album_images_per_page', 'album_masonry_images_per_page', $use_option_defaults, $params)));
 		    $defaults['album_sort_by'] = self::get_option_value('masonry_album_sort_by', 'all_album_sort_by', 'masonry_album_sort_by', $use_option_defaults, $params);
         $defaults['album_order_by'] = self::get_option_value('masonry_album_order_by', 'all_album_order_by', 'masonry_album_order_by', $use_option_defaults, $params);
 		    $defaults['sort_by'] = self::get_option_value('album_masonry_sort_by', 'sort_by', 'album_masonry_sort_by', $use_option_defaults, $params);
@@ -2324,8 +2328,8 @@ class WDWLibrary {
         $defaults['extended_album_image_thumb_width'] = self::get_option_value('extended_album_image_thumb_width', 'extended_album_image_thumb_width', 'album_extended_image_thumb_width', $use_option_defaults, $params);
         $defaults['extended_album_image_thumb_height'] = self::get_option_value('extended_album_image_thumb_height', 'extended_album_image_thumb_height', 'album_extended_image_thumb_height', $use_option_defaults, $params);
         $defaults['extended_album_enable_page'] = self::get_option_value('extended_album_enable_page', 'extended_album_enable_page', 'album_extended_enable_page', $use_option_defaults, $params);
-        $defaults['extended_albums_per_page'] = self::get_option_value('extended_albums_per_page', 'extended_albums_per_page', 'albums_extended_per_page', $use_option_defaults, $params);
-        $defaults['extended_album_images_per_page'] = self::get_option_value('extended_album_images_per_page', 'extended_album_images_per_page', 'album_extended_images_per_page', $use_option_defaults, $params);
+        $defaults['extended_albums_per_page'] = abs(intval(self::get_option_value('extended_albums_per_page', 'extended_albums_per_page', 'albums_extended_per_page', $use_option_defaults, $params)));
+        $defaults['extended_album_images_per_page'] = abs(intval(self::get_option_value('extended_album_images_per_page', 'extended_album_images_per_page', 'album_extended_images_per_page', $use_option_defaults, $params)));
 		    $defaults['album_sort_by'] = self::get_option_value('extended_album_sort_by', 'all_album_sort_by', 'extended_album_sort_by', $use_option_defaults, $params);
 		    $defaults['album_order_by'] = self::get_option_value('extended_album_order_by', 'all_album_order_by', 'extended_album_order_by', $use_option_defaults, $params);
 		    $defaults['sort_by'] = self::get_option_value('album_extended_sort_by', 'sort_by', 'album_extended_sort_by', $use_option_defaults, $params);
@@ -3294,6 +3298,103 @@ class WDWLibrary {
   }
 
   /**
+   * Whitelist sort direction for SQL ORDER BY (returns ASC or DESC).
+   *
+   * @param string $order_by
+   *
+   * @return string
+   */
+  public static function sanitize_sort_direction( $order_by ) {
+    return ( strtolower( trim( (string) $order_by ) ) === 'asc' ) ? 'ASC' : 'DESC';
+  }
+
+  /**
+   * Whitelist album/gallery-group sort column for SQL ORDER BY.
+   *
+   * @param string $sort_by
+   * @param string $from
+   *
+   * @return string
+   */
+  public static function sanitize_album_sort_column( $sort_by, $from = '' ) {
+    if ( !empty( $from ) && $from === 'widget' ) {
+      return 'id';
+    }
+    $sort_by = trim( (string) $sort_by );
+    if ( $sort_by === 'random' || $sort_by === 'RAND()' ) {
+      return 'random';
+    }
+    $allowed_columns = array( 'order', 'name', 'modified_date', 'id' );
+    return in_array( $sort_by, $allowed_columns, true ) ? $sort_by : 'order';
+  }
+
+  /**
+   * Whitelist image sort column for shortcode attributes.
+   *
+   * @param string $sort_by
+   *
+   * @return string
+   */
+  public static function sanitize_image_sort_column( $sort_by ) {
+    $sort_by = trim( (string) $sort_by );
+    if ( $sort_by === 'RAND()' ) {
+      return 'random';
+    }
+    $allowed_columns = array( 'order', 'alt', 'date', 'filename', 'size', 'resolution', 'random', 'filetype' );
+    return in_array( $sort_by, $allowed_columns, true ) ? $sort_by : 'order';
+  }
+
+  /**
+   * Sanitize sort/order attributes in shortcode tagtext before storage.
+   *
+   * @param string $tagtext
+   *
+   * @return string
+   */
+  public static function sanitize_shortcode_tagtext( $tagtext ) {
+    $tagtext = trim( (string) $tagtext );
+    if ( $tagtext === '' ) {
+      return '';
+    }
+    $data = self::parse_tagtext_to_array( $tagtext );
+    if ( empty( $data ) ) {
+      return $tagtext;
+    }
+    $album_group_sort_keys = array(
+      'compact_album_sort_by',
+      'masonry_album_sort_by',
+      'extended_album_sort_by',
+      'all_album_sort_by',
+    );
+    $sanitized = '';
+    foreach ( $data as $key => $value ) {
+      if ( in_array( $key, $album_group_sort_keys, true ) ) {
+        $value = self::sanitize_album_sort_column( $value );
+      }
+      elseif ( preg_match( '/_order_by$/', $key ) || $key === 'order_by' ) {
+        $value = ( self::sanitize_sort_direction( $value ) === 'ASC' ) ? 'asc' : 'desc';
+      }
+      elseif ( preg_match( '/_sort_by$/', $key ) || $key === 'sort_by' ) {
+        $value = self::sanitize_image_sort_column( $value );
+      }
+      $sanitized .= ' ' . $key . '="' . self::escape_shortcode_attribute_value( $value ) . '"';
+    }
+
+    return $sanitized;
+  }
+
+  /**
+   * Strip characters that break shortcode attribute quoting (preserves URLs and other content).
+   *
+   * @param string $value
+   *
+   * @return string
+   */
+  public static function escape_shortcode_attribute_value( $value ) {
+    return str_replace( array( '"', "\0" ), '', (string) $value );
+  }
+
+  /**
 
  * @param $tagtext
  *
@@ -3600,6 +3701,7 @@ class WDWLibrary {
   }
 
   public static function pro_button_link($slug = 'From Gallery') {
+    return 'https://10web.io/plugins/wordpress-photo-gallery/';
     if ( ( defined('TENWEB_CONNECTED_SPEED') &&
         class_exists('\Tenweb_Authorization\Login') &&
         \Tenweb_Authorization\Login::get_instance()->check_logged_in() &&

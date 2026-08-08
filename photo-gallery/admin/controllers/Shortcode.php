@@ -11,7 +11,7 @@ class ShortcodeController_bwg {
 
   public function execute() {
     $task = WDWLibrary::get('task');
-    if ( $task != '' && $this->from_menu ) {
+    if ( $task != '' && ( $this->from_menu || $task === 'save' ) ) {
       if ( !WDWLibrary::verify_nonce(BWG()->nonce) ) {
         die('Sorry, your nonce did not verify.');
       }
@@ -58,6 +58,7 @@ class ShortcodeController_bwg {
     global $wpdb;
     $tagtext = WDWLibrary::get('tagtext');
     if ($tagtext) {
+      $tagtext = WDWLibrary::sanitize_shortcode_tagtext( $tagtext );
       /* clear tags */
       $tagtext = " " . $tagtext;
       $id = WDWLibrary::get('currrent_id', 0, 'intval');
