@@ -9,28 +9,115 @@ var popup_cover_containers = '' +
     '.interface-interface-skeleton__secondary-sidebar, ' +
     '.interface-interface-skeleton__footer, ' +
     '.interface-interface-skeleton__sidebar';
+
+/**
+ * Safely read another window's document (iframe / 10Web cloud embeds can be cross-origin).
+ *
+ * @param {Window} win
+ * @returns {Document|null}
+ */
+function bwgGetSameOriginDocument( win ) {
+  if ( !win ) {
+    return null;
+  }
+  try {
+    var doc = win.document;
+    // Touch a property so cross-origin access throws here instead of later.
+    void ( doc.body || doc.documentElement );
+    return doc;
+  } catch ( e ) {
+    return null;
+  }
+}
+
+/**
+ * Return win only if it is same-origin and readable.
+ *
+ * @param {Window} win
+ * @returns {Window|null}
+ */
+function bwgGetSameOriginWindow( win ) {
+  return bwgGetSameOriginDocument( win ) ? win : null;
+}
+
+/**
+ * Highest same-origin ancestor window (never use raw window.top on 10Web embeds).
+ *
+ * @returns {Window}
+ */
+function bwgGetSameOriginTopWindow() {
+  var win = window;
+  try {
+    while ( win.parent && win.parent !== win ) {
+      if ( !bwgGetSameOriginWindow( win.parent ) ) {
+        break;
+      }
+      win = win.parent;
+    }
+  } catch ( e ) {}
+  return win;
+}
+
+/**
+ * Nearest same-origin parent document, else the current document.
+ *
+ * @returns {Document}
+ */
+function bwgGetParentDocument() {
+  var parentDoc = bwgGetSameOriginDocument( window.parent !== window ? window.parent : null );
+  return parentDoc || document;
+}
+
+/**
+ * Same-origin top document when available.
+ *
+ * @returns {Document}
+ */
+function bwgGetTopDocument() {
+  return bwgGetSameOriginTopWindow().document;
+}
+
+/**
+ * Same-origin parent window with jQuery, if any.
+ *
+ * @returns {Window|null}
+ */
+function bwgGetParentJQueryWindow() {
+  var parentWin = bwgGetSameOriginWindow( window.parent !== window ? window.parent : null );
+  if ( parentWin && parentWin.jQuery ) {
+    return parentWin;
+  }
+  return null;
+}
+
 jQuery(function() {
-  /* Adding class to sections in gutenberb which are break full with of popup */
-  jQuery(popup_cover_containers, parent.document).css("display","none");
-  /* Trigger click to close gutenberg sidebar menu when click on PG shortcode (work with Classic & Gutenberg Editors) */
-  jQuery(".media-modal-close, #TB_closeWindowButton, .mce-window[aria-label='Photo Gallery'] .mce-close", parent.document).on("click", function() {
-    jQuery(popup_cover_containers, parent.document).removeAttr("style");
-  });
-  /* close gutenberg sidebar menu when press ESC button in Classic editor */
-  if ( jQuery("body", parent.document).hasClass('modal-open') ) {
-    jQuery(parent.document).on('keyup', function(e) {
-      if ( e.key == "Escape" ) jQuery(popup_cover_containers, parent.document).removeAttr("style");
+  var parentDoc = bwgGetParentDocument();
+
+  /* Adding class to sections in gutenberg which break full width of popup */
+  if ( parentDoc !== document ) {
+    jQuery(popup_cover_containers, parentDoc).css("display","none");
+    /* Trigger click to close gutenberg sidebar menu when click on PG shortcode (work with Classic & Gutenberg Editors) */
+    jQuery(".media-modal-close, #TB_closeWindowButton, .mce-window[aria-label='Photo Gallery'] .mce-close", parentDoc).on("click", function() {
+      jQuery(popup_cover_containers, parentDoc).removeAttr("style");
     });
+    /* close gutenberg sidebar menu when press ESC button in Classic editor */
+    if ( jQuery("body", parentDoc).hasClass('modal-open') ) {
+      jQuery(parentDoc).on('keyup', function(e) {
+        if ( e.key == "Escape" ) jQuery(popup_cover_containers, parentDoc).removeAttr("style");
+      });
+    }
+    jQuery(".mce-toolbar-grp.mce-inline-toolbar-grp.mce-container.mce-panel", parentDoc).hide();
   }
   jQuery(".bwg_tw-container").parents().find(".wrap.wd-wrap-ajax").css({
     'height': 'calc(100% - 55px)'
   });
-
-  jQuery(".mce-toolbar-grp.mce-inline-toolbar-grp.mce-container.mce-panel", parent.document).hide();
   /* Add tabs. */
   jQuery(".bwg_tabs").each(function () {
     jQuery(this).tabs({
       activate: function( event, ui ) {
+        if ( typeof bwg_updating_shortcode !== 'undefined' && bwg_updating_shortcode ) {
+          return;
+        }
         var bwg_shortcode_type_new = bwg_shortcode_type ? bwg_shortcode_type : (ui.newPanel.attr('id') == 'bwg_tab_albums_content' ? 'album_compact_preview' : 'thumbnails');
         bwg_shortcode_type = jQuery('input[name=gallery_type]:checked').val();
         bwg_gallery_type(bwg_shortcode_type_new);
@@ -141,7 +228,10 @@ function change(view_type){
 }
 
 function bwg_shortcode_load() {
-  jQuery(".loading_div", window.parent.document).remove();
+  var parentDoc = bwgGetParentDocument();
+  if ( parentDoc !== document ) {
+    jQuery(".loading_div", parentDoc).remove();
+  }
   jQuery("#loading_div.bwg_show").hide();
   jQuery(document).trigger("onUploadShortcode");
   jQuery(".spider_int_input").keypress(function (event) {
@@ -642,8 +732,13 @@ function bwg_change_tab() {
  * @returns {*}
  */
 function bwg_get_textarea_selection(id) {
-  var textComponent = top.document.getElementById(id);
-  var selectedText;
+  var topWin = bwgGetSameOriginTopWindow();
+  var topDoc = topWin.document;
+  var textComponent = topDoc.getElementById(id);
+  var selectedText = '';
+  if ( !textComponent ) {
+    return selectedText;
+  }
   if (textComponent.selectionStart !== undefined) {
     /* Standards Compliant Version */
     var startPos = textComponent.selectionStart;

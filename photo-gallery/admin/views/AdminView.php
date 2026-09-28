@@ -233,7 +233,7 @@ class AdminView_bwg {
    * @return string
    */
   protected function pagination($page_url, $total, $items_per_page = 20) {
-    $page_number = WDWLibrary::get('paged', 1) < 0 ? 1 : WDWLibrary::get('paged', 1);
+    $page_number = WDWLibrary::get('paged', 1, 'esc_attr') < 0 ? 1 : WDWLibrary::get('paged', 1, 'esc_attr');
     $search = WDWLibrary::get('s', '');
     $orderby = WDWLibrary::get('orderby', '');
     $order = WDWLibrary::get('order', '');
@@ -283,7 +283,7 @@ class AdminView_bwg {
         ?>
           <div class="paging-input">
           <label for="current-page-selector" class="screen-reader-text"><?php _e('Current Page', 'photo-gallery'); ?></label>
-          <input type="text" class="bwg-current-page current-page" name="current_page" value="<?php echo $page_number; ?>" onkeypress="return input_pagination(event, this)" size="1" />
+          <input type="text" class="bwg-current-page current-page" name="current_page" value="<?php echo esc_attr($page_number); ?>" onkeypress="return input_pagination(event, this)" size="1" />
           <span class="tablenav-paging-text">
              <?php _e('of', 'photo-gallery'); ?>
             <span class="total-pages"><?php echo $pages_count; ?></span>

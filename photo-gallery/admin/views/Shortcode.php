@@ -9,6 +9,9 @@ class ShortcodeView_bwg extends AdminView_bwg {
       wp_print_scripts('jquery-ui-tooltip');
       wp_print_scripts(BWG()->prefix . '_shortcode');
       wp_print_scripts(BWG()->prefix . '_jscolor');
+      // Explicit admin form styles so checked radios/checkboxes render in the ajax iframe.
+      wp_print_styles('dashicons');
+      wp_print_styles('forms');
       wp_print_styles(BWG()->prefix . '_shortcode');
       wp_print_styles(BWG()->prefix . '-opensans');
       wp_print_styles(BWG()->prefix . '_tables');
@@ -557,6 +560,72 @@ class ShortcodeView_bwg extends AdminView_bwg {
     ?>
     <script type="text/javascript">
       var ajaxurl = "<?php echo admin_url('admin-ajax.php'); ?>";
+      <?php if ( !empty( $params['gutenberg_callback'] ) ) { ?>
+      /**
+       * Notify the Gutenberg block across nested iframes (iframe editor + shortcode modal).
+       * Walks parent windows for the callback, then falls back to postMessage.
+       */
+      function bwgNotifyGutenbergParent( content, shortcodeId ) {
+        var callbackName = '<?php echo esc_js( $params['gutenberg_callback'] ); ?>';
+        var layoutSelectors = '.edit-post-layout, .edit-post-layout__content, .interface-interface-skeleton, .interface-interface-skeleton__content';
+        var message = {
+          type: 'tw-gb-shortcode',
+          callback: callbackName,
+          shortcode: content,
+          shortcode_id: shortcodeId
+        };
+        var win = window;
+        var found = false;
+        try {
+          while ( win ) {
+            try {
+              if ( typeof win[callbackName] === 'function' ) {
+                if ( win.jQuery ) {
+                  win.jQuery( win.document ).find( layoutSelectors ).css( { 'z-index': '', 'overflow': '' } );
+                }
+                win[callbackName]( content, shortcodeId );
+                found = true;
+                break;
+              }
+            } catch ( e ) {}
+            if ( !win.parent || win.parent === win ) {
+              break;
+            }
+            // Stop climbing into a cross-origin embedder (e.g. 10Web cloud shell).
+            if ( !bwgGetSameOriginWindow( win.parent ) ) {
+              try {
+                win.parent.postMessage( message, '*' );
+              } catch ( e ) {}
+              break;
+            }
+            win = win.parent;
+          }
+        } catch ( e ) {}
+        if ( found ) {
+          return;
+        }
+        win = window;
+        try {
+          while ( win ) {
+            try {
+              win.postMessage( message, window.location.origin );
+            } catch ( e ) {}
+            if ( !win.parent || win.parent === win ) {
+              break;
+            }
+            if ( !bwgGetSameOriginWindow( win.parent ) ) {
+              try {
+                win.parent.postMessage( message, '*' );
+              } catch ( e ) {}
+              break;
+            }
+            win = win.parent;
+          }
+        } catch ( e ) {}
+      }
+      <?php } ?>
+      var bwg_shortcode_type;
+      var bwg_updating_shortcode = false;
       var shortcodes = [];
       var shortcode_id = 1;
       var temp_shortcode_id = 0;
@@ -584,7 +653,7 @@ class ShortcodeView_bwg extends AdminView_bwg {
         }
       } elseif ( $params['elementor_callback'] ) {
         ?>
-        if(jQuery(".elementor-control-bwg_elementor_shortcode input", window.parent.document).val() == "") {
+        if(jQuery(".elementor-control-bwg_elementor_shortcode input", bwgGetParentDocument()).val() == "") {
           var content = '';
         } else {
           var content = 'elementor_callback';
@@ -592,17 +661,23 @@ class ShortcodeView_bwg extends AdminView_bwg {
         <?php
       } elseif (!$from_menu) { ?>
       var content;
-        if (top.tinyMCE.activeEditor && !top.tinyMCE.activeEditor.hidden && top.tinyMCE.activeEditor.selection) {
-          content = top.tinyMCE.activeEditor.selection.getContent();
-        }
-        else {
-          content = bwg_get_textarea_selection(top.wpActiveEditor);
+        try {
+          var bwgTop = bwgGetSameOriginTopWindow();
+          if (bwgTop.tinyMCE && bwgTop.tinyMCE.activeEditor && !bwgTop.tinyMCE.activeEditor.hidden && bwgTop.tinyMCE.activeEditor.selection) {
+            content = bwgTop.tinyMCE.activeEditor.selection.getContent();
+          }
+          else {
+            content = bwg_get_textarea_selection(bwgTop.wpActiveEditor);
+          }
+        } catch ( e ) {
+          content = '';
         }
       <?php } else { ?>
       var content = jQuery("#bwg_shortcode").val();
       <?php } ?>
       function bwg_update_shortcode() {
         params = get_params("Best_Wordpress_Gallery");
+        bwg_updating_shortcode = true;
         if (!params) { // Insert.
           <?php if ($from_menu) { ?>
           jQuery('#insert').text('<?php _e('Generate', 'photo-gallery'); ?>');
@@ -618,13 +693,18 @@ class ShortcodeView_bwg extends AdminView_bwg {
           jQuery("#bwg_function").val('');
           jQuery(".bwg_tabs").tabs({active: 0});
           bwg_gallery_type('thumbnails');
+          bwg_updating_shortcode = false;
         }
         else { // Update.
           if (params['id']) {
             shortcode_id = params['id'];
+            if (typeof shortcodes[shortcode_id] === 'undefined' && typeof shortcodes[String(shortcode_id)] !== 'undefined') {
+              shortcode_id = String(shortcode_id);
+            }
             if (typeof shortcodes[shortcode_id] === 'undefined') {
               alert("<?php echo addslashes(__('There is no shortcode with such ID!', 'photo-gallery')); ?>");
               bwg_gallery_type('thumbnails');
+              bwg_updating_shortcode = false;
               return 0;
             }
             var short_code = get_short_params(shortcodes[shortcode_id]);
@@ -643,7 +723,10 @@ class ShortcodeView_bwg extends AdminView_bwg {
           jQuery('#insert').attr('onclick', "jQuery('#loading_div').show(); bwg_insert_shortcode(content);");
           jQuery("select[id=theme] option[value='" + short_code['theme_id'] + "']").prop('selected', true);
           jQuery("select[id=gallery_types_name] option[value='" + short_code['gallery_type'] + "']").prop('selected', true);
-          jQuery("#use_option_defaults").prop('checked', true).trigger('change');
+          // Apply use_option_defaults before populating fields so the custom options
+          // container is visible when values are written into the inputs.
+          var bwg_use_defaults = (String(short_code['use_option_defaults']) === '1');
+          jQuery("#use_option_defaults").prop('checked', bwg_use_defaults).trigger('change');
           if (short_code['type'] == 'album' || short_code['gallery_type'] == 'album_compact_preview' || short_code['gallery_type'] == 'album_masonry_preview' || short_code['gallery_type'] == 'album_extended_preview') {
             short_code['type'] = 'album';
             jQuery(".bwg_tabs").tabs({active: 1});
@@ -655,8 +738,9 @@ class ShortcodeView_bwg extends AdminView_bwg {
           jQuery("select[id=gallery] option[value='" + short_code['gallery_id'] + "']").prop('selected', true);
           jQuery("select[id=album] option[value='" + short_code['album_id'] + "']").prop('selected', true);
           jQuery("select[id=tag] option[value='" + short_code['tag'] + "']").prop('selected', true);
-          bwg_gallery_type(short_code['gallery_type']);
-          if (short_code['use_option_defaults'] != 1) {
+          bwg_gallery_type(short_code['gallery_type'] || 'thumbnails');
+          // Ensure custom options stay visible when defaults are off (bwg_gallery_type may toggle sections).
+          if ( !bwg_use_defaults ) {
             jQuery("#use_option_defaults").prop('checked', false).trigger('change');
           }
           switch (short_code['gallery_type']) {
@@ -1721,6 +1805,7 @@ class ShortcodeView_bwg extends AdminView_bwg {
             jQuery("#watermark_type_none").prop('checked', true);
           }
           bwg_watermark('watermark_type_' + short_code['watermark_type']);
+          bwg_updating_shortcode = false;
         }
       }
 
@@ -1752,27 +1837,32 @@ class ShortcodeView_bwg extends AdminView_bwg {
             }
             ?>
 
-            var short_code_attr = new Array();
+            var short_code_attr = {};
             short_code_attr['id'] = <?php echo (int) $params['gutenberg_id']; ?>;
             return short_code_attr;
             <?php
         } elseif ($params['elementor_callback']) {
           ?>
           var el_shortcode_id = new Array();
-          el_shortcode_id['id'] = jQuery('.elementor-control-bwg_elementor_shortcode input', window.parent.document).val();
+          el_shortcode_id['id'] = jQuery('.elementor-control-bwg_elementor_shortcode input', bwgGetParentDocument()).val();
           if( el_shortcode_id['id'] != "" && parseInt(el_shortcode_id['id'])){
             return el_shortcode_id;
           }
           return false;
           <?php
         } elseif (!$from_menu) { ?>
-            var selected_text;
-            if (top.tinyMCE.activeEditor && !top.tinyMCE.activeEditor.hidden && top.tinyMCE.activeEditor.selection) {
-              selected_text = top.tinyMCE.activeEditor.selection.getContent();
+            var selected_text = '';
+            try {
+              var bwgTop = bwgGetSameOriginTopWindow();
+              if (bwgTop.tinyMCE && bwgTop.tinyMCE.activeEditor && !bwgTop.tinyMCE.activeEditor.hidden && bwgTop.tinyMCE.activeEditor.selection) {
+                selected_text = bwgTop.tinyMCE.activeEditor.selection.getContent();
+              }
+              else {
+                selected_text = bwg_get_textarea_selection(bwgTop.wpActiveEditor);
+              }
+            } catch ( e ) {
+              selected_text = '';
             }
-        else {
-            selected_text = bwg_get_textarea_selection(top.wpActiveEditor);
-        }
         <?php
         } else { ?>
         var shortcode_val = jQuery("#shortcode").val();
@@ -1787,35 +1877,35 @@ class ShortcodeView_bwg extends AdminView_bwg {
         else {
           return false;
         }
-        var params_str = module_str.substring(module_str.indexOf(" ") + 1);
-        var key_values = params_str.split('" ');
-        var short_code_attr = new Array();
-        for (var key in key_values) {
-          var short_code_index = key_values[key].split('=')[0];
-          var short_code_value = key_values[key].split('=')[1];
-          short_code_value = short_code_value.replace(/\"/g, '');
-          short_code_attr[short_code_index] = short_code_value;
-        }
-        return short_code_attr;
+        return get_short_params(module_str);
       }
 
       function get_short_params(tagtext) {
-        var params_str = tagtext.substring(tagtext.indexOf(" ") + 1);
-        var key_values = params_str.split('" ');
-        var short_code_attr = new Array();
-        for (var key in key_values) {
-          var short_code_index = key_values[key].split('=')[0];
-          var short_code_value = key_values[key].split('=')[1];
-          short_code_value = short_code_value.replace(/\"/g, '');
-          short_code_attr[short_code_index] = short_code_value;
+        var short_code_attr = {};
+        if (!tagtext) {
+          return short_code_attr;
+        }
+        // Match key="value" pairs; supports empty values and '=' inside values (URLs).
+        var re = /([\w_]+)\s*=\s*"([^"]*)"/g;
+        var match;
+        while ((match = re.exec(String(tagtext))) !== null) {
+          short_code_attr[match[1]] = match[2];
         }
         return short_code_attr;
       }
 
       function bwg_insert_shortcode(content) {
-        jQuery(popup_cover_containers, parent.document).removeAttr("style");
+        var parentDoc = bwgGetParentDocument();
+        if ( parentDoc !== document ) {
+          jQuery(popup_cover_containers, parentDoc).removeAttr("style");
+        }
         var page_builder_activated = bwg_before_shortcode_add_builder_editor();
-        window.parent.window.jQuery(window.parent.document).trigger("onOpenShortcode");
+        try {
+          var parentJqWin = bwgGetParentJQueryWindow();
+          if ( parentJqWin ) {
+            parentJqWin.jQuery( parentJqWin.document ).trigger( "onOpenShortcode" );
+          }
+        } catch ( e ) {}
         var gallery_type = jQuery("input[name=gallery_type]:checked").val();
         var theme = jQuery("#theme").val();
         var use_options_defaults = jQuery("#use_option_defaults").prop('checked') ? 1 : 0;
@@ -2152,7 +2242,8 @@ class ShortcodeView_bwg extends AdminView_bwg {
         short_code += ' id="' + shortcode_id + '"' + title + ']';
         var short_id = ' id="' + shortcode_id + '"' + title;
         <?php if (!$from_menu && !$params['gutenberg_callback']) { ?>
-        if (top.tinyMCE.activeEditor && !top.tinyMCE.activeEditor.hidden) {
+        var bwgTop = bwgGetSameOriginTopWindow();
+        if (bwgTop.tinyMCE && bwgTop.tinyMCE.activeEditor && !bwgTop.tinyMCE.activeEditor.hidden) {
           // If there is no builder, then shortcode replace to image.
           if( !page_builder_activated ) {
             short_code = short_code.replace(/\[Best_Wordpress_Gallery([^\]]*)\]/g, function (d, c) {
@@ -2174,27 +2265,42 @@ class ShortcodeView_bwg extends AdminView_bwg {
           url,
           post_data
         ).success(function (data, textStatus, errorThrown) {
-          if (top.tinymce.isIE && content) {
+          try {
+            if (bwgTop.tinymce && bwgTop.tinymce.isIE && content && bwgTop.tinyMCE.activeEditor) {
               // IE and Update.
-              var all_content = top.tinyMCE.activeEditor.getContent();
+              var all_content = bwgTop.tinyMCE.activeEditor.getContent();
               all_content = all_content.replace('<p></p><p>[Best_Wordpress_Gallery', '<p>[Best_Wordpress_Gallery');
-              top.tinyMCE.activeEditor.setContent(all_content.replace(content, '[Best_Wordpress_Gallery id="' + shortcode_id + '"' + title + ']'));
-          } else if( typeof jQuery("#insert").attr('data-callback') != "undefined" && jQuery("#insert").attr('data-callback').length ) {
-              window.parent.jQuery('.elementor-control-bwg_elementor_shortcode input').val(shortcode_id).trigger("input");
-              jQuery('.elementor-control-bwg_view_type_shortcode input', window.parent.document).val("temp");
-              jQuery(".elementor-control-bwg_view_type_shortcode .elementor-choices-label", window.parent.document).trigger('click');
-              jQuery('.elementor-control-bwg_view_type_shortcode input', window.parent.document).val(shortcode_id);
-              jQuery(".elementor-control-bwg_view_type_shortcode .elementor-choices-label", window.parent.document).trigger('click');
-          }
-          else {
-              top.send_to_editor(short_code);
-          }
-          top.tinyMCE.execCommand('mceRepaint');
-          /* Close shortcode editor after insert.*/
-          if (top.tinyMCE.activeEditor) {
-            top.tinyMCE.activeEditor.windowManager.close(window);
-          }
-          top.tb_remove();
+              bwgTop.tinyMCE.activeEditor.setContent(all_content.replace(content, '[Best_Wordpress_Gallery id="' + shortcode_id + '"' + title + ']'));
+            } else if( typeof jQuery("#insert").attr('data-callback') != "undefined" && jQuery("#insert").attr('data-callback').length ) {
+              var parentJqWin = bwgGetParentJQueryWindow();
+              var parentDoc = bwgGetParentDocument();
+              if ( parentJqWin && typeof parentJqWin.bwgApplyElementorShortcode === 'function' ) {
+                parentJqWin.bwgApplyElementorShortcode(shortcode_id);
+              } else if ( parentJqWin && parentDoc !== document ) {
+                parentJqWin.jQuery('.elementor-control-bwg_elementor_shortcode input').val(shortcode_id).trigger("input");
+                jQuery('.elementor-control-bwg_view_type_shortcode input', parentDoc).val("temp");
+                jQuery(".elementor-control-bwg_view_type_shortcode .elementor-choices-label", parentDoc).trigger('click');
+                jQuery('.elementor-control-bwg_view_type_shortcode input', parentDoc).val(shortcode_id);
+                jQuery(".elementor-control-bwg_view_type_shortcode .elementor-choices-label", parentDoc).trigger('click');
+              }
+              try {
+                window.parent.postMessage({ type: 'bwg-elementor-shortcode', shortcode_id: String(shortcode_id) }, window.location.origin);
+              } catch ( e2 ) {}
+            }
+            else if ( typeof bwgTop.send_to_editor === 'function' ) {
+              bwgTop.send_to_editor(short_code);
+            }
+            if ( bwgTop.tinyMCE ) {
+              bwgTop.tinyMCE.execCommand('mceRepaint');
+              /* Close shortcode editor after insert.*/
+              if (bwgTop.tinyMCE.activeEditor && bwgTop.tinyMCE.activeEditor.windowManager) {
+                bwgTop.tinyMCE.activeEditor.windowManager.close(window);
+              }
+            }
+            if ( typeof bwgTop.tb_remove === 'function' ) {
+              bwgTop.tb_remove();
+            }
+          } catch ( e ) {}
           jQuery('#loading_div').hide();
         });
         <?php } else { ?>
@@ -2216,8 +2322,9 @@ class ShortcodeView_bwg extends AdminView_bwg {
           <?php
           if ( $params['gutenberg_callback'] ) {
           ?>
-			window.parent.window.jQuery(".edit-post-layout, .edit-post-layout__content").css({"z-index":"0","overflow":"auto"});
-			window.parent['<?php echo $params['gutenberg_callback']; ?>'](content, shortcode_id);
+          if ( typeof bwgNotifyGutenbergParent === 'function' ) {
+            bwgNotifyGutenbergParent( content, shortcode_id );
+          }
           return;
           <?php
           }
@@ -2239,9 +2346,16 @@ class ShortcodeView_bwg extends AdminView_bwg {
         return;
       }
       function bwg_before_shortcode_add_builder_editor() {
-        if ( top.jQuery('body').hasClass('elementor-editor-active') || top.jQuery('body').hasClass('fl-builder') || top.jQuery('body').hasClass('et_divi_theme') ) {
-          return true;
-        }
+        try {
+          var bwgTop = bwgGetSameOriginTopWindow();
+          if ( !bwgTop.jQuery ) {
+            return false;
+          }
+          var $body = bwgTop.jQuery('body');
+          if ( $body.hasClass('elementor-editor-active') || $body.hasClass('fl-builder') || $body.hasClass('et_divi_theme') ) {
+            return true;
+          }
+        } catch ( e ) {}
         return false;
       }
       jQuery(function() {

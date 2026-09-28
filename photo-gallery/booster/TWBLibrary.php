@@ -276,6 +276,87 @@ class TWBBWGLibrary {
     }
     return 'notstarted';
   }
+
+  /**
+   * Decode two_page_speed meta without instantiating PHP objects.
+   *
+   * @param mixed $value Raw meta value.
+   * @return array|false
+   */
+  public static function unserialize_page_speed( $value ) {
+    if ( is_array( $value ) ) {
+      return $value;
+    }
+    if ( ! is_string( $value ) || $value === '' ) {
+      return false;
+    }
+    $value = trim( $value );
+    if ( preg_match( '/^[CO]:\d+:/', $value ) ) {
+      return false;
+    }
+    if ( ! is_serialized( $value ) ) {
+      return false;
+    }
+    $decoded = @unserialize( $value, array( 'allowed_classes' => false ) );
+    return is_array( $decoded ) ? $decoded : false;
+  }
+
+  /**
+   * Sanitize two_page_speed post meta. Arrays of scalars only; reject objects.
+   *
+   * @param mixed $meta_value Incoming meta value.
+   * @return array
+   */
+  public static function sanitize_page_speed_meta( $meta_value ) {
+    if ( is_object( $meta_value ) ) {
+      return array();
+    }
+    if ( is_string( $meta_value ) ) {
+      $decoded = self::unserialize_page_speed( $meta_value );
+      return is_array( $decoded ) ? self::sanitize_page_speed_array( $decoded ) : array();
+    }
+    if ( ! is_array( $meta_value ) ) {
+      return array();
+    }
+    return self::sanitize_page_speed_array( $meta_value );
+  }
+
+  /**
+   * Recursively keep only scalar/array values.
+   *
+   * @param array $data
+   * @return array
+   */
+  public static function sanitize_page_speed_array( $data ) {
+    $clean = array();
+    foreach ( $data as $key => $value ) {
+      if ( is_int( $key ) ) {
+        $clean_key = $key;
+      }
+      elseif ( is_string( $key ) ) {
+        $clean_key = sanitize_key( $key );
+        if ( $clean_key === '' ) {
+          continue;
+        }
+      }
+      else {
+        continue;
+      }
+      if ( is_array( $value ) ) {
+        $clean[ $clean_key ] = self::sanitize_page_speed_array( $value );
+      }
+      elseif ( is_object( $value ) ) {
+        continue;
+      }
+      elseif ( is_bool( $value ) || is_int( $value ) || is_float( $value ) ) {
+        $clean[ $clean_key ] = $value;
+      }
+      else {
+        $clean[ $clean_key ] = sanitize_text_field( (string) $value );
+      }
+    }
+    return $clean;
+  }
 }
 
 

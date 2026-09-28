@@ -255,7 +255,10 @@ class TWBBWGAdminBar
         return;
       }
       foreach ( $posts as $post ) {
-        $page_score = unserialize($post['meta_value']);
+        $page_score = TWBBWGLibrary::unserialize_page_speed($post['meta_value']);
+        if ( !is_array($page_score) ) {
+          continue;
+        }
         if( isset($page_score['previous_score']) ) {
           $page_score = $page_score['previous_score'];
         } else {

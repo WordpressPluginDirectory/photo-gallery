@@ -218,6 +218,81 @@ input[type=radio][name=gallery_type] {
   margin: 5px 10px 0 0;
 }
 
+/**
+ * Checked radio/checkbox indicators for the shortcode ajax iframe.
+ * WP admin forms.css uses appearance:none + ::before (SVG data-URI / dashicons),
+ * which often fails to render inside admin-ajax iframes (CSP / missing deps).
+ */
+.bwg_form.bwg_shortcode_form input[type="checkbox"],
+.bwg_form.bwg_shortcode_form input[type="radio"]:not([name="gallery_type"]) {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  min-width: 1rem;
+  margin: 0 6px 0 0;
+  padding: 0 !important;
+  vertical-align: middle;
+  position: relative;
+  border: 1px solid #8c8f94;
+  background: #fff;
+  box-shadow: none;
+  cursor: pointer;
+  display: inline-block;
+  line-height: 1;
+}
+
+.bwg_form.bwg_shortcode_form input[type="radio"]:not([name="gallery_type"]) {
+  border-radius: 50%;
+}
+
+.bwg_form.bwg_shortcode_form input[type="checkbox"] {
+  border-radius: 3px;
+}
+
+.bwg_form.bwg_shortcode_form input[type="checkbox"]:checked,
+.bwg_form.bwg_shortcode_form input[type="radio"]:not([name="gallery_type"]):checked {
+  border-color: #2271b1;
+  background: #2271b1;
+}
+
+.bwg_form.bwg_shortcode_form input[type="checkbox"]:checked::before,
+.bwg_form.bwg_shortcode_form input[type="radio"]:not([name="gallery_type"]):checked::before {
+  float: none !important;
+  display: block !important;
+  position: absolute;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bwg_form.bwg_shortcode_form input[type="checkbox"]:checked::before {
+  /* White checkmark via borders — no font/SVG dependency */
+  content: "" !important;
+  width: 0.35rem;
+  height: 0.65rem;
+  top: 0.05rem;
+  left: 0.3rem;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+.bwg_form.bwg_shortcode_form input[type="radio"]:not([name="gallery_type"]):checked::before {
+  content: "" !important;
+  width: 0.4rem;
+  height: 0.4rem;
+  top: 50%;
+  left: 50%;
+  margin: 0 !important;
+  border-radius: 50%;
+  background: #fff !important;
+  transform: translate(-50%, -50%);
+  border: 0;
+}
+
 @media screen and (max-width: 1890px) {
   .gallery_type .pro_btn, .album_type_div .pro_btn {
     top: 95px;

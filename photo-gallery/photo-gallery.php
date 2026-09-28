@@ -3,7 +3,7 @@
  * Plugin Name: Photo Gallery
  * Plugin URI: https://10web.io/plugins/wordpress-photo-gallery/?utm_source=photo_gallery&utm_medium=free_plugin
  * Description: This plugin is a fully responsive gallery plugin with advanced functionality.  It allows having different image galleries for your posts and pages. You can create unlimited number of galleries, combine them into albums, and provide descriptions and tags.
- * Version: 1.8.43
+ * Version: 1.8.47
  * Author: Photo Gallery Team
  * Author URI: https://10web.io/plugins/?utm_source=photo_gallery&utm_medium=free_plugin
  * Text Domain: photo-gallery
@@ -107,8 +107,8 @@ final class BWG {
     $this->plugin_url = plugins_url(plugin_basename(dirname(__FILE__)));
     $this->front_url = $this->plugin_url;
     $this->main_file = plugin_basename(__FILE__);
-    $this->plugin_version = '1.8.43';
-    $this->db_version = '1.8.43';
+    $this->plugin_version = '1.8.47';
+    $this->db_version = '1.8.45';
     $this->prefix = 'bwg';
     $this->nicename = __('Photo Gallery', 'photo-gallery');
     require_once($this->plugin_dir . '/framework/WDWLibrary.php');
@@ -329,7 +329,7 @@ final class BWG {
   }
 
   public function register_block_editor_assets($assets) {
-    $version = '2.0.6';
+    $version = '2.0.7';
     $js_path = $this->plugin_url . '/js/tw-gb/block.js';
     $css_path = $this->plugin_url . '/css/tw-gb/block.css';
     if (!isset($assets['version']) || version_compare($assets['version'], $version) === -1) {
@@ -377,13 +377,15 @@ final class BWG {
     // Get the last version from all 10Web plugins.
     $assets = apply_filters('tw_get_block_editor_assets', array());
     // Not performing unregister or unenqueue as in old versions all are with prefixes.
-    wp_enqueue_script('tw-gb-block', $assets['js_path'], array( 'wp-blocks', 'wp-element' ), $assets['version']);
+    wp_enqueue_script('tw-gb-block', $assets['js_path'], array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'jquery' ), $assets['version']);
     wp_localize_script('tw-gb-block', 'tw_obj_translate', array(
       'nothing_selected' => __('Nothing selected.', 'photo-gallery'),
       'empty_item' => __('- Select -', 'photo-gallery'),
       'blocks' => json_encode($blocks)
     ));
-    wp_enqueue_style('tw-gb-block', $assets['css_path'], array( 'wp-edit-blocks' ), $assets['version']);
+    // Load in the admin parent document so the portaled shortcode modal is styled
+    // when the post editor canvas is iframed (do not depend on wp-edit-blocks).
+    wp_enqueue_style('tw-gb-block', $assets['css_path'], array(), $assets['version']);
   }
 
   /**
@@ -908,6 +910,7 @@ final class BWG {
   public function admin_ajax() {
     $page = WDWLibrary::get('action');
     if ( $page == 'shortcode_' . $this->prefix ) {
+      $this->send_elementor_document_isolation_policy_header();
       $permissions = 'edit_posts';
     }
     else {
@@ -920,6 +923,9 @@ final class BWG {
     }
     else {
       die('Access Denied');
+    }
+    if ( $page == 'editimage_' . $this->prefix && !WDWLibrary::verify_nonce('editimage_' . $this->prefix) ) {
+      die('Sorry, your nonce did not verify.');
     }
     $allowed_pages = array(
       'galleries_' . $this->prefix,
@@ -1042,13 +1048,58 @@ final class BWG {
         };
       });
 
+      function bwgApplyElementorShortcode(shortcodeId) {
+        shortcodeId = String(shortcodeId || '');
+        try {
+          if ( typeof $e !== 'undefined' && typeof elementor !== 'undefined' && elementor.getPanelView ) {
+            var pageView = elementor.getPanelView().getCurrentPageView();
+            if ( pageView ) {
+              var container = pageView.getOption && pageView.getOption('container');
+              if ( !container && pageView.model && elementor.getContainer ) {
+                container = elementor.getContainer(pageView.model.id);
+              }
+              if ( container && $e.run ) {
+                $e.run('document/elements/settings', {
+                  container: container,
+                  settings: {
+                    bwg_elementor_shortcode: shortcodeId,
+                    bwg_view_type_shortcode: shortcodeId
+                  }
+                });
+              }
+            }
+          }
+        } catch ( e ) {}
+        jQuery('.elementor-control-bwg_elementor_shortcode input').val(shortcodeId).trigger('input');
+        jQuery('.elementor-control-bwg_view_type_shortcode input').val(shortcodeId).trigger('change');
+      }
+
+      if ( !window._bwgElementorMessageBound ) {
+        window._bwgElementorMessageBound = true;
+        window.addEventListener('message', function(event) {
+          if ( event.origin !== window.location.origin ) {
+            return;
+          }
+          if ( !event.data || event.data.type !== 'bwg-elementor-shortcode' ) {
+            return;
+          }
+          bwgApplyElementorShortcode(event.data.shortcode_id);
+          if ( typeof tb_remove === 'function' ) {
+            tb_remove();
+          }
+          if ( typeof bwg_remove_loading_block === 'function' ) {
+            bwg_remove_loading_block();
+          }
+        });
+      }
+
       // Set shortcode popup dimensions.
       function bwg_set_shortcode_popup_dimensions() {
         var H = jQuery(window).height(), W = jQuery(window).width();
         jQuery("#TB_title").hide().first().show();
         // New
         var tbWindow = jQuery('#TB_window');
-        if (tbWindow.size()) {
+        if (tbWindow.length) {
           tbWindow.width(W).height(H);
           jQuery('#TB_iframeContent').width(W).height(H);
           tbWindow.attr('style',
@@ -1928,7 +1979,25 @@ final class BWG {
   }
 
   public function enqueue_elementor_widget_scripts() {
-    wp_enqueue_script(BWG()->prefix . 'elementor_widget_js', plugins_url('js/bwg_elementor_widget.js', __FILE__), array( 'jquery' ));
+    if ( function_exists('add_thickbox') ) {
+      add_thickbox();
+    }
+    wp_enqueue_script(BWG()->prefix . 'elementor_widget_js', plugins_url('js/bwg_elementor_widget.js', __FILE__), array( 'jquery', 'thickbox' ));
+  }
+
+  /**
+   * Match Elementor's Document-Isolation-Policy on the shortcode iframe.
+   *
+   * Elementor 4.1+ sends DIP on the editor. Without the same header, the
+   * Thickbox iframe is isolated from the parent and cannot read/write widget controls.
+   */
+  private function send_elementor_document_isolation_policy_header() {
+    if ( headers_sent() ) {
+      return;
+    }
+    if ( class_exists('\Elementor\Core\Editor\Editor') && is_callable(array( '\Elementor\Core\Editor\Editor', 'send_document_isolation_policy_header' )) ) {
+      \Elementor\Core\Editor\Editor::send_document_isolation_policy_header();
+    }
   }
 
   /*

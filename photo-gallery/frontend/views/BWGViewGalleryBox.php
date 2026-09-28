@@ -1400,9 +1400,12 @@ class BWGViewGalleryBox {
       'popup_enable_zoom'                     => isset($params['popup_enable_zoom']) ? $params['popup_enable_zoom'] : FALSE,
       'gdpr_compliance'                       => isset($params['gdpr_compliance']) ? $params['gdpr_compliance'] : FALSE,
     );
-    $gallery_box_data = json_encode( $bwg_gallery_box_params );
+    $gallery_box_data = wp_json_encode(
+      $bwg_gallery_box_params,
+      JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+    );
     ?>
-    <script>var gallery_box_data = JSON.parse('<?php echo $gallery_box_data; ?>');</script>
+    <script>var gallery_box_data = <?php echo $gallery_box_data; ?>;</script>
     <?php
     die();
   }

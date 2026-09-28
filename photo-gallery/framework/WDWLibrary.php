@@ -71,6 +71,10 @@ class WDWLibrary {
     if ( !isset($value) ) {
       if ( $default_value === NULL ) {
         return NULL;
+      }
+      // Apply numeric callbacks to defaults so shortcode/fallback IDs cannot bypass intval/absint.
+      if ( in_array( $callback, array( 'intval', 'absint' ), true ) ) {
+        $value = call_user_func( $callback, $default_value );
       } else {
         $value = $default_value;
       }
@@ -3396,19 +3400,23 @@ class WDWLibrary {
 
   /**
 
- * @param $tagtext
+ * Parse shortcode tagtext attribute string into an associative array.
+ * Uses a regex so values may contain '=' (e.g. URLs) and empty values are kept.
+ *
+ * @param string $tagtext
  *
  * @return array
  */
-  public static function parse_tagtext_to_array($tagtext ) {
+  public static function parse_tagtext_to_array( $tagtext ) {
     $data = array();
-    $tagtext_params = explode('" ', $tagtext);
-    foreach ( $tagtext_params as $tagtext_param ) {
-      $tagtext_param = str_replace('"', '', $tagtext_param);
-      $tagtext_elem = explode('=', $tagtext_param);
-      $data[str_replace(' ', '', $tagtext_elem[0])] = $tagtext_elem[1];
+    if ( ! is_string( $tagtext ) || $tagtext === '' ) {
+      return $data;
     }
-
+    if ( preg_match_all( '/([\w_]+)\s*=\s*"([^"]*)"/', $tagtext, $matches, PREG_SET_ORDER ) ) {
+      foreach ( $matches as $match ) {
+        $data[ $match[1] ] = $match[2];
+      }
+    }
     return $data;
   }
 
@@ -3701,7 +3709,7 @@ class WDWLibrary {
   }
 
   public static function pro_button_link($slug = 'From Gallery') {
-    return 'https://10web.io/plugins/wordpress-photo-gallery/';
+	  return 'https://10web.io/plugins/wordpress-photo-gallery/';
     if ( ( defined('TENWEB_CONNECTED_SPEED') &&
         class_exists('\Tenweb_Authorization\Login') &&
         \Tenweb_Authorization\Login::get_instance()->check_logged_in() &&

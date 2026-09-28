@@ -54,6 +54,7 @@ class TenWebBoosterBWG {
 
   private function add_actions() {
     add_action('init', array( $this, 'register_meta' ));
+    add_filter('is_protected_meta', array( $this, 'protect_page_speed_meta' ), 10, 2);
     add_action('admin_enqueue_scripts', array( $this, 'register_admin_scripts' ));
     add_action('wp_enqueue_scripts', array( $this, 'register_scripts' ));
     if ( $this->submenu['parent_slug'] || !$this->is_plugin ) {
@@ -477,8 +478,27 @@ class TenWebBoosterBWG {
           ),
         ),
         'single' => TRUE,
-        'type' => 'object'
+        'type' => 'object',
+        'auth_callback' => array( $this, 'page_speed_meta_auth' ),
+        'sanitize_callback' => array( 'TWBBWGLibrary', 'sanitize_page_speed_meta' ),
       ]);
     }
+  }
+
+  /**
+   * Only privileged users may write two_page_speed via REST/XML-RPC.
+   */
+  public function page_speed_meta_auth( $allowed, $meta_key, $object_id, $user_id ) {
+    return user_can( $user_id, 'manage_options' );
+  }
+
+  /**
+   * Hide two_page_speed from XML-RPC custom_fields and similar public meta APIs.
+   */
+  public function protect_page_speed_meta( $protected, $meta_key ) {
+    if ( 'two_page_speed' === $meta_key ) {
+      return true;
+    }
+    return $protected;
   }
 }

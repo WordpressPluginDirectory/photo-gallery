@@ -2,8 +2,8 @@
 Contributors: webdorado,wdsupport,photogallerysupport,10web
 Tags: gallery, photo gallery, image gallery, responsive gallery, wordpress gallery plugin, photo albums, gallery slider, gallery lightbox, wordpress photo gallery plugin, fullscreen gallery, watermarking, video gallery
 Requires at least: 4.6
-Tested up to: 7.0
-Stable tag: 1.8.43
+Tested up to: 6.6
+Stable tag: 1.8.47
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -272,6 +272,20 @@ Choose whether to display random or the first/last specific number of images.
 **Theme.** Choose the theme, which will be applied to the gallery/album.
 
 == Changelog ==
+
+= 1.8.47 =
+* Fixed: Elementor editor compatibility for the Photo Gallery shortcode.
+* Fixed: PHP object injection in booster page speed meta.
+* Fixed: Reflected XSS in the image editor.
+
+= 1.8.46 =
+* Fixed: Gutenberg iframe editor compatibility for the Photo Gallery block.
+
+= 1.8.45 =
+* Fixed: Security fix.
+
+= 1.8.44 =
+* Fixed: Security fix.
 
 = 1.8.43 =
 * Fixed: Security fix.

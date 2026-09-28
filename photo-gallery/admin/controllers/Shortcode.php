@@ -26,6 +26,13 @@ class ShortcodeController_bwg {
     $params = array();
     $params['gutenberg_callback'] = WDWLibrary::get('callback', '', 'esc_js');
     $params['gutenberg_id'] = WDWLibrary::get('edit', 0, 'intval');
+    // Fallback: parse id from the shortcode query arg when edit is missing/empty.
+    if ( empty( $params['gutenberg_id'] ) ) {
+      $shortcode_param = WDWLibrary::get('shortcode', '');
+      if ( is_string( $shortcode_param ) && preg_match( '/\bid=["\']?(\d+)/', wp_unslash( $shortcode_param ), $bwg_id_match ) ) {
+        $params['gutenberg_id'] = (int) $bwg_id_match[1];
+      }
+    }
     $params['elementor_callback'] = WDWLibrary::get('elementor_callback', 0, 'intval');
     $params['from_menu'] = $this->from_menu;
     $params['gallery_rows'] = WDWLibrary::get_galleries();

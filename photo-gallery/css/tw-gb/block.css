@@ -1,6 +1,6 @@
 /**
  * 10Web plugins Gutenberg integration
- * version 2.0.6
+ * version 2.0.7
  */
 
 .tw-container {
@@ -13,6 +13,11 @@
   background: rgba(0,0,0,0.7);
   height: 100%;
   box-sizing: border-box;
+}
+
+/* Portaled onto admin document.body for iframe editor compatibility */
+body > .tw-container {
+  z-index: 10000000;
 }
 
 .tw-container .tw-container-wrap {

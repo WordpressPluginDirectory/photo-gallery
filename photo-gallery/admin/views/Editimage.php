@@ -31,7 +31,7 @@ class EditimageView_bwg {
 	<div id="loading_div"></div>
     <div id="wd-content" style="width:100%; height:100%;">
       <div id="bwg_container_for_media_1" style="width:100%; height:100%; margin:0 auto; text-align:center; vertical-align:middle;">
-			<img id="image_display" src="<?php echo BWG()->upload_url . WDWLibrary::image_url_version($image_url, $modified_date); ?>" style="max-width:100%; max-height:100%; position: relative; transform: translateY(-50%); top: 50%;" />
+			<img id="image_display" src="<?php echo esc_url(BWG()->upload_url . WDWLibrary::image_url_version($image_url, $modified_date)); ?>" style="max-width:100%; max-height:100%; position: relative; transform: translateY(-50%); top: 50%;" />
       </div>
     </div>
     <script language="javascript" type="text/javascript" src="<?php echo BWG()->plugin_url . '/js/bwg_embed.js?ver=' . BWG()->plugin_version; ?>"></script>
@@ -270,7 +270,7 @@ class EditimageView_bwg {
 		   <table class="crop_and_preview" cellpadding="0" cellspacing="0">
 			  <tr>
 				<td class="thumb_preview_td" style="vertical-align: middle; max-width: <?php echo ($popup_width - $thumb_width) - 40; ?>px; height:409px;" max-width: <?php echo ($popup_height - $thumb_height) - 75; ?>px;">
-				  <img id="image_view" data-mod-date = "<?php echo $updated_image['modified_date'] ?>" src="<?php echo esc_url(BWG()->upload_url . $image_data->image_url); ?>" data-image-url="<?php echo $image_data->image_url ?>" data-thumb-url="<?php echo $image_data->thumb_url ?>" style="max-width:800px; max-height: 400px; visibility: hidden" />
+				  <img id="image_view" data-mod-date="<?php echo esc_attr($updated_image['modified_date']); ?>" src="<?php echo esc_url(BWG()->upload_url . $image_data->image_url); ?>" data-image-url="<?php echo esc_attr($image_data->image_url); ?>" data-thumb-url="<?php echo esc_attr($image_data->thumb_url); ?>" style="max-width:800px; max-height: 400px; visibility: hidden" />
 				</td>
 			  </tr>
 			</table>
@@ -326,6 +326,7 @@ class EditimageView_bwg {
           'h' : jQuery("#h").val(),
           'data-image-url' :  data_image_url,
           'data-thumb-url' :  data_thumb_url,
+          'bwg_nonce' : jQuery('#bwg_nonce').val(),
         };
 
         jQuery.ajax({
@@ -886,7 +887,7 @@ class EditimageView_bwg {
         <div class="img_cont" style="height:<?php echo $popup_height - 40; ?>px;">
           <div class="img_main_cont">
             <div class="last_cont">
-              <img class="bwg_preview_image" src="<?php echo BWG()->upload_url . $image_data->image_url; ?>" style="max-width: <?php echo $image_width; ?>px; max-height: <?php echo $image_height; ?>px;" />
+              <img class="bwg_preview_image" src="<?php echo esc_url(BWG()->upload_url . $image_data->image_url); ?>" style="max-width: <?php echo (int) $image_width; ?>px; max-height: <?php echo (int) $image_height; ?>px;" />
             </div>
           </div>
           <div class="cont_bright_cont">

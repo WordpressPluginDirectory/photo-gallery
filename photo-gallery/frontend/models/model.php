@@ -106,6 +106,7 @@ class BWGModelSite {
 
   public function get_alb_gals_row( $bwg, $id, $albums_per_page, $sort_by, $order_by, $pagination_type = 0, $from = '' ) {
     $prepareArgs = array();
+    $id = absint( $id );
     $albums_per_page = abs( intval( $albums_per_page ) );
     global $wpdb;
     $sort_by = WDWLibrary::sanitize_album_sort_column( $sort_by, $from );
@@ -169,13 +170,13 @@ class BWGModelSite {
       $prepareArgsnew = array_merge($prepareArgs, $prepareArgs);
       $query  = '( SELECT t.*, t1.preview_image, t1.random_preview_image, t1.name, t1.description, t1.slug, t1.modified_date FROM `' . $wpdb->prefix . 'bwg_album_gallery` as t';
       $query .= ' LEFT JOIN `' . $wpdb->prefix . 'bwg_album` as t1 ON (t.is_album=1 AND t.alb_gal_id = t1.id)';
-      $query .= ' WHERE t.album_id="' . $id . '"';
+      $query .= $wpdb->prepare( ' WHERE t.album_id="%d"', $id );
       $query .= ' AND t1.published=1' . str_replace( '{{table}}', 't1', $search_where );
       $query .= ') ';
       $query .= ' UNION ';
       $query .= '( SELECT t.*, t2.preview_image, t2.random_preview_image, t2.name, t2.description, t2.slug, t2.modified_date FROM `' . $wpdb->prefix . 'bwg_album_gallery` as t';
       $query .= ' LEFT JOIN `' . $wpdb->prefix . 'bwg_gallery` as t2 ON (t.is_album=0 AND t.alb_gal_id = t2.id)';
-      $query .= ' WHERE t.album_id="' . $id . '"';
+      $query .= $wpdb->prepare( ' WHERE t.album_id="%d"', $id );
       $query .= ' AND t2.published=1' . str_replace( '{{table}}', 't2', $search_where );
       $query .= ')';
       $limitation = ' ' . $order_by . ' ' . $limit_str;
