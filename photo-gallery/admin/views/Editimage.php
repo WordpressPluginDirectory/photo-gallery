@@ -87,14 +87,20 @@ class EditimageView_bwg {
     $w = (int) WDWLibrary::get('w', 0);
     $h = (int) WDWLibrary::get('h', 0);
     $modified_date = time();
+    $requested_image = '';
+    $requested_thumb = '';
     if ( WDWLibrary::get('image_url') ) {
+      $requested_image = WDWLibrary::gallery_upload_path(WDWLibrary::get('image_url', '', 'esc_url_raw'));
+      $requested_thumb = WDWLibrary::gallery_upload_path(WDWLibrary::get('thumb_url', '', 'esc_url_raw'));
+      if ( WDWLibrary::get('data-image-url') != '' ) {
+        $requested_image = WDWLibrary::gallery_upload_path(WDWLibrary::get('data-image-url', '', 'esc_url_raw'));
+        $requested_thumb = WDWLibrary::gallery_upload_path(WDWLibrary::get('data-thumb-url', '', 'esc_url_raw'));
+      }
+    }
+    if ( $requested_image !== '' && $requested_thumb !== '' ) {
       $image_data = new stdClass();
-      $image_data->image_url = WDWLibrary::get('image_url');
-      $image_data->thumb_url = WDWLibrary::get('thumb_url');
-        if( WDWLibrary::get('data-image-url') != '' ) {
-            $image_data->image_url = WDWLibrary::get('data-image-url');
-            $image_data->thumb_url = WDWLibrary::get('data-thumb-url');
-        }
+      $image_data->image_url = $requested_image;
+      $image_data->thumb_url = $requested_thumb;
       $filename = htmlspecialchars_decode(BWG()->upload_dir . $image_data->image_url, ENT_COMPAT | ENT_QUOTES);
       $thumb_filename = htmlspecialchars_decode(BWG()->upload_dir . $image_data->thumb_url, ENT_COMPAT | ENT_QUOTES);
       $form_action = add_query_arg(array(
@@ -109,7 +115,14 @@ class EditimageView_bwg {
                                    ), admin_url('admin-ajax.php'));
     }
     else {
-      $image_data->image_url = stripslashes($image_data->image_url);
+      if ( ! is_object($image_data) ) {
+        $image_data = new stdClass();
+        $image_data->image_url = '';
+        $image_data->thumb_url = '';
+      }
+      else {
+        $image_data->image_url = stripslashes($image_data->image_url);
+      }
       $filename = htmlspecialchars_decode(BWG()->upload_dir . $image_data->image_url, ENT_COMPAT | ENT_QUOTES);
       $thumb_filename = htmlspecialchars_decode(BWG()->upload_dir . $image_data->thumb_url, ENT_COMPAT | ENT_QUOTES);
       $form_action = add_query_arg(array(
@@ -412,8 +425,8 @@ class EditimageView_bwg {
     $image_data = $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . $wpdb->prefix . 'bwg_image WHERE id="%d"', $id));
     if ( !$image_data ) {
       $image_data = new stdClass();
-      $image_data->image_url = WDWLibrary::get('image_url', '', 'esc_url_raw');
-      $image_data->thumb_url = WDWLibrary::get('thumb_url', '', 'esc_url_raw');
+      $image_data->image_url = WDWLibrary::gallery_upload_path(WDWLibrary::get('image_url', '', 'esc_url_raw'));
+      $image_data->thumb_url = WDWLibrary::gallery_upload_path(WDWLibrary::get('thumb_url', '', 'esc_url_raw'));
     }
     $filename = htmlspecialchars_decode(BWG()->upload_dir . $image_data->image_url, ENT_COMPAT | ENT_QUOTES);
     $thumb_filename = htmlspecialchars_decode(BWG()->upload_dir . $image_data->thumb_url, ENT_COMPAT | ENT_QUOTES);
@@ -442,8 +455,8 @@ class EditimageView_bwg {
     $modified_date = time();
     $message = '';
     if ( WDWLibrary::get('image_url') ) {
-      $image_data->image_url = WDWLibrary::get('image_url', '', 'esc_url_raw');
-      $image_data->thumb_url = WDWLibrary::get('thumb_url', '', 'esc_url_raw');
+      $image_data->image_url = WDWLibrary::gallery_upload_path(WDWLibrary::get('image_url', '', 'esc_url_raw'));
+      $image_data->thumb_url = WDWLibrary::gallery_upload_path(WDWLibrary::get('thumb_url', '', 'esc_url_raw'));
       $filename = htmlspecialchars_decode(BWG()->upload_dir . $image_data->image_url, ENT_COMPAT | ENT_QUOTES);
       $thumb_filename = htmlspecialchars_decode(BWG()->upload_dir . $image_data->thumb_url, ENT_COMPAT | ENT_QUOTES);
       $form_action = add_query_arg(array(

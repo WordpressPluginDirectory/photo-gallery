@@ -31,6 +31,9 @@ class EditimageController_bwg {
   public function display() {
     $image_data = array();
     $type = WDWLibrary::get('type', 'display');
+    if ( ! in_array($type, array( 'display', 'crop', 'rotate' ), true) ) {
+      $type = 'display';
+    }
     if ( $type == 'crop' || $type == 'rotate' ) {
       $image_data = $this->model->get_image_data();
     }

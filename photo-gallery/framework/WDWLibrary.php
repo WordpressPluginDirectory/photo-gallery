@@ -363,13 +363,64 @@ class WDWLibrary {
    * @param $url
    */
   public static function redirect($url) {
-    $url = html_entity_decode(wp_nonce_url($url, BWG()->nonce, BWG()->nonce));
+    $url = wp_nonce_url($url, BWG()->nonce, BWG()->nonce);
+    self::js_redirect($url);
+  }
+
+  /**
+   * Print a same-site JavaScript redirect.
+   *
+   * wp_nonce_url() HTML-escapes its result. Decode that for a real URL, then
+   * encode again for a JavaScript string. Do not echo the decoded value.
+   *
+   * @param string $url
+   */
+  private static function js_redirect($url) {
+    $url = html_entity_decode($url, ENT_QUOTES, 'UTF-8');
+    $url = esc_url_raw($url);
+    if ( '' === $url ) {
+      $url = admin_url();
+    }
+    $url = wp_validate_redirect($url, admin_url());
     ?>
     <script>
-      window.location = "<?php echo $url; ?>";
+      window.location = <?php echo wp_json_encode($url); ?>;
     </script>
     <?php
     exit();
+  }
+
+  /**
+   * Relative path inside the gallery upload directory.
+   *
+   * Request values are not trusted as image locations. A value with a scheme,
+   * a parent-directory segment, or an attribute-breaking character is rejected.
+   *
+   * @param string $relative
+   * @return string
+   */
+  public static function gallery_upload_path($relative) {
+    $relative = (string) $relative;
+    $relative = str_replace('\\', '/', $relative);
+    $decoded = rawurldecode($relative);
+    if ( $relative === '' || strpos($relative, '..') !== false || strpos($decoded, '..') !== false ) {
+      return '';
+    }
+    if ( preg_match('#^[a-z][a-z0-9+.-]*:#i', $relative) || strpos($relative, '//') !== false ) {
+      return '';
+    }
+    if ( preg_match('/[\x00-\x1f\x7f\'"<>]/', $relative) ) {
+      return '';
+    }
+    $base = wp_normalize_path(untrailingslashit((string) BWG()->upload_dir));
+    if ( $base === '' ) {
+      return '';
+    }
+    $full = wp_normalize_path($base . '/' . ltrim($relative, '/'));
+    if ( strpos($full, $base . '/') !== 0 ) {
+      return '';
+    }
+    return $relative;
   }
 
   public static function search($search_by, $search_value, $form_id, $position_search) {
@@ -703,12 +754,7 @@ class WDWLibrary {
   }
 
   public static function spider_redirect($url) {
-    ?>
-    <script>
-      window.location = "<?php echo $url; ?>";
-    </script>
-    <?php
-    exit();
+    self::js_redirect($url);
   }
 
  /**

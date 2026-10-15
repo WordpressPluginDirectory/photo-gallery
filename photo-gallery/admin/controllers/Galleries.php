@@ -27,7 +27,7 @@ class GalleriesController_bwg {
     add_filter('upload_mimes', array(BWG(), 'allowed_upload_mime_types'), 10, 2);
     $this->model = new GalleriesModel_bwg();
     $this->view = new GalleriesView_bwg();
-    $this->page = WDWLibrary::get('page');
+    $this->page = preg_replace('/[^A-Za-z0-9_\-]/', '', (string) WDWLibrary::get('page'));
 
     $this->actions = array(
       'publish' => array(
@@ -67,11 +67,12 @@ class GalleriesController_bwg {
     $task = WDWLibrary::get('task');
     $id = WDWLibrary::get('current_id', 0, 'intval');
     if ( $task != 'display' && method_exists($this, $task) ) {
-      if ( $task != 'edit' ) {
-        check_admin_referer(BWG()->nonce, BWG()->nonce);
-      }
       $action = WDWLibrary::get('bulk_action', '-1');
       $image_action = WDWLibrary::get('image_bulk_action', '-1');
+      // Opening the edit screen is a GET. Bulk actions on that same task still need a nonce.
+      if ( $task != 'edit' || $action != '-1' || $image_action != '-1' ) {
+        check_admin_referer(BWG()->nonce, BWG()->nonce);
+      }
       if ( $action != '-1' ) {
         $this->bulk_action($action);
       }
